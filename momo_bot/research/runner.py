@@ -83,8 +83,11 @@ def construct_sleeve(
     sleeve: str,
     basket_fraction: float = 0.20,
     membership: pd.DataFrame | None = None,
+    volatility_lookback: int = 90,
 ) -> pd.DataFrame:
-    volatility = prices.pct_change(fill_method=None).rolling(90, min_periods=90).std() * np.sqrt(365)
+    volatility = prices.pct_change(fill_method=None).rolling(
+        volatility_lookback, min_periods=volatility_lookback
+    ).std() * np.sqrt(365)
     if sleeve == "time_series":
         raw = forecasts.div(20.0)
         if membership is not None:
@@ -115,7 +118,8 @@ def run_research(
     if funding_mode == "historical" and funding_cashflows_usd is None:
         raise ValueError("Headline research requires event-level historical funding")
     forecasts, components = build_time_series_forecasts(prices, config.signal)
-    targets = construct_sleeve(forecasts, prices, config.risk, sleeve=sleeve, membership=membership)
+    targets = construct_sleeve(forecasts, prices, config.risk, sleeve=sleeve, membership=membership,
+                               volatility_lookback=config.signal.volatility_lookback)
     result = simulate_portfolio(prices, targets, config.risk, funding_cashflows_usd=funding_cashflows_usd)
     hashes = {"prices": frame_hash(prices), "membership": frame_hash(membership) if membership is not None else "none",
               "funding": frame_hash(funding_cashflows_usd) if funding_cashflows_usd is not None else funding_mode}
