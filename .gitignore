@@ -1,0 +1,39 @@
+/.env
+.env.*
+!.env.example
+/.venv/
+/venv/
+
+__pycache__/
+*.py[cod]
+
+# Local data / artifacts
+/data_store/
+/logs/
+/reports/
+/charts/
+/momo_charts/
+*.pkl
+*.parquet
+*.duckdb
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.log
+*.out
+*.err
+
+# Generated caches/builds
+/.pytest_cache/
+/.codex-remote-attachments/
+/dist/
+/build/
+/node_modules/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

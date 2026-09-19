@@ -1,0 +1,38 @@
+python-dotenv>=1.0.0
+
+# Core
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+dateparser>=1.2.0
+
+# Telegram
+python-telegram-bot>=20.0
+
+# Binance
+python-binance>=1.0.19
+websockets>=12.0
+
+# Plotting / charts
+matplotlib>=3.7.0
+seaborn>=0.13.0
+plotly>=5.18.0
+dash>=2.15.0
+
+# Optimization / stats
+scipy>=1.10.0
+optuna>=3.5.0
+statsmodels>=0.14.0
+
+# Utils
+tqdm>=4.66.0
+
+# Tests
+pytest>=8.0.0
+
+# Optional (chart image export for plotly)
+kaleido>=0.2.1
+
+# Optional (faster local storage formats)
+pyarrow>=14.0.0
+duckdb>=0.10.0
