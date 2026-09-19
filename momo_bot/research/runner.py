@@ -102,7 +102,9 @@ def construct_sleeve(
             raw = long_only_rank_weights(percentiles, forecasts, basket_fraction)
         else:
             raise ValueError(f"Unknown sleeve: {sleeve}")
-    return risk_target_weights(raw, volatility, risk)
+    return risk_target_weights(raw, volatility, risk,
+                               asset_returns=prices.pct_change(fill_method=None),
+                               portfolio_volatility_lookback=volatility_lookback)
 
 
 def run_research(

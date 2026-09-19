@@ -26,3 +26,20 @@ def test_funding_reconciles_into_net_return():
     result = simulate_portfolio(prices, weights, config, funding_cashflows_usd=pd.Series([0, 10, -5], index=index))
     assert result.net_returns.sum() == .005
     assert result.funding_cashflow.sum() == 5
+
+
+def test_portfolio_volatility_scaler_accounts_for_correlation():
+    rng = np.random.default_rng(42)
+    index = pd.date_range("2023-01-01", periods=500)
+    shared = pd.Series(rng.normal(0, .01, len(index)), index=index)
+    returns = pd.DataFrame({"a": shared, "b": shared})
+    raw = pd.DataFrame(1.0, index=index, columns=returns.columns)
+    asset_vol = returns.rolling(90, min_periods=90).std() * np.sqrt(365)
+    config = replace(RiskConfig(), annual_volatility_target=.10, gross_leverage_cap=10,
+                     single_ticker_risk_cap=.5)
+    weights = risk_target_weights(raw, asset_vol, config, asset_returns=returns)
+    realized = (weights.shift(1) * returns).sum(axis=1).iloc[200:].std() * np.sqrt(365)
+    assert realized == pytest.approx(.10, abs=.02)
+
+
+import pytest

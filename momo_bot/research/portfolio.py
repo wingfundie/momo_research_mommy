@@ -51,15 +51,54 @@ def risk_target_weights(
     raw_weights: pd.DataFrame,
     asset_volatility: pd.DataFrame,
     config: RiskConfig,
+    *,
+    asset_returns: pd.DataFrame | None = None,
+    portfolio_volatility_lookback: int = 90,
 ) -> pd.DataFrame:
-    """Volatility-scale weights, then enforce ticker and gross-notional caps."""
-    inverse_vol = raw_weights.div(asset_volatility.replace(0.0, np.nan))
-    normalized = inverse_vol.div(inverse_vol.abs().sum(axis=1).replace(0.0, np.nan), axis=0).fillna(0.0)
-    scaled = normalized * float(config.annual_volatility_target)
-    scaled = scaled.clip(-config.single_ticker_risk_cap, config.single_ticker_risk_cap)
+    """Allocate capped risk budgets, target ex-ante volatility, then cap gross notional."""
+    clean = raw_weights.replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    signs = np.sign(clean)
+    budgets = clean.abs().div(clean.abs().sum(axis=1).replace(0.0, np.nan), axis=0).fillna(0.0)
+    budgets = budgets.apply(lambda row: _cap_risk_budget(row, config.single_ticker_risk_cap), axis=1)
+    risk_units = signs * budgets
+    inverse_vol = risk_units.div(asset_volatility.replace(0.0, np.nan)).fillna(0.0)
+    if asset_returns is None:
+        predicted_vol = ((inverse_vol * asset_volatility.fillna(0.0)) ** 2).sum(axis=1).pow(0.5)
+    else:
+        aligned_returns = asset_returns.reindex_like(inverse_vol).fillna(0.0)
+        preliminary_return = (inverse_vol.shift(1).fillna(0.0) * aligned_returns).sum(axis=1)
+        predicted_vol = preliminary_return.rolling(
+            portfolio_volatility_lookback, min_periods=portfolio_volatility_lookback
+        ).std() * np.sqrt(365)
+    scaled = inverse_vol.mul(
+        float(config.annual_volatility_target) / predicted_vol.replace(0.0, np.nan), axis=0
+    ).fillna(0.0)
     gross = scaled.abs().sum(axis=1)
     factor = (float(config.gross_leverage_cap) / gross.replace(0.0, np.nan)).clip(upper=1.0).fillna(0.0)
     return scaled.mul(factor, axis=0)
+
+
+def _cap_risk_budget(row: pd.Series, cap: float) -> pd.Series:
+    active = row > 0
+    count = int(active.sum())
+    if count == 0:
+        return row * 0.0
+    effective_cap = max(float(cap), 1.0 / count)
+    result = row.copy()
+    free = active.copy()
+    remaining = 1.0
+    while free.any():
+        proposal = result[free] / result[free].sum() * remaining
+        over = proposal > effective_cap + 1e-12
+        if not over.any():
+            result.loc[free] = proposal
+            break
+        names = proposal[over].index
+        result.loc[names] = effective_cap
+        free.loc[names] = False
+        remaining = 1.0 - result.loc[~free].sum()
+    result.loc[~active] = 0.0
+    return result
 
 
 def simulate_portfolio(

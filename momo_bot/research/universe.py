@@ -171,7 +171,8 @@ def build_monthly_snapshot(
         basic = pd.notna(row.fdv) and row.volume >= config.min_median_quote_volume_usd and not (
             config.exclude_stablecoins and row.stable
         )
-        threshold = config.exit_rank if row.symbol in previous else config.entry_rank
+        # Bootstrap the first snapshot at the requested top-N; hysteresis applies thereafter.
+        threshold = config.max_members if not previous else (config.exit_rank if row.symbol in previous else config.entry_rank)
         if basic and pd.notna(row.rank) and int(row.rank) <= threshold and len(selected) < config.max_members:
             selected.append(row.symbol)
     canonical = frame[["symbol", "fdv", "volume", "rank"]].to_json(orient="records", date_format="iso")
@@ -249,7 +250,7 @@ def splice_warmup_history(
 
 def archive_provider_response(payload: object, destination: Path, *, provider: str, timestamp: pd.Timestamp) -> str:
     envelope = {"provider": provider, "retrieved_at": pd.Timestamp(timestamp).isoformat(), "payload": payload}
-    raw = json.dumps(envelope, sort_keys=True, separators=(",", ":")).encode()
+    raw = json.dumps(envelope, sort_keys=True, separators=(",", ":"), default=str).encode()
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(raw)
     return hashlib.sha256(raw).hexdigest()
