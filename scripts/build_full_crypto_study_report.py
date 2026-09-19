@@ -84,7 +84,7 @@ def main():
     body += finding(2, "Long-only was the raw winner", f"Positive-forecast top-20% long-only produced {best.net_sharpe:.2f} Sharpe, {best.annual_return:.1%} annual return and {best.max_drawdown:.1%} maximum drawdown at {best.annual_volatility:.1%} realized volatility.")
     body += finding(3, "Funding separated the sleeves", f"Time-series funding cost {best_ts.funding_return:.1%} cumulatively in its best grid result, while the best continuous cross-sectional construction gained {best_xs.funding_return:.1%}.")
     body += finding(4, "Pooled weights added no visible edge", "At the primary settings, pooled and equal-rule time-series results were identical. The fitted rule optimizer effectively collapsed toward its equal anchor, so complexity was not rewarded in this sample.")
-    body += finding(5, "Costs matter, but did not erase the signal", "For primary time-series momentum, moving from zero-cost maker execution to the 100%-taker/5-bps headline reduced net Sharpe from 0.74 to 0.70.")
+    body += finding(5, "Costs matter, but did not erase the signal", "For primary time-series momentum, moving from all-maker/no-slippage execution to the 100%-taker/5-bps headline reduced net Sharpe from 0.74 to 0.70.")
     body += finding(6, "The best grid is not independent evidence", "The reported maximum was selected from 1,460 scenarios. No multiple-testing correction or untouched prospective period has yet been applied.")
     body += '</div></section>'
     body += '<section id="portfolio"><h2>Portfolio comparisons</h2>'
