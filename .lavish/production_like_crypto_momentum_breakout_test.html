@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Production-Like Crypto Trend Test</title>
+  <style>
+    :root{--ink:#282b30;--muted:#636870;--blue:#4c94df;--teal:#268a87;--purple:#7658c9;--amber:#c29330;--red:#bd4e4e;--line:#dfe3eb;--panel:#ececf3;--paper:#f5f6f9;--white:#fff;--green:#2f8a62}
+    *{box-sizing:border-box;min-width:0}html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}body{margin:0;max-width:100%;border-top:5px solid var(--blue);background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+    main{width:100%;max-width:1344px;margin:auto;padding:50px 32px 80px}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:800;color:#3977b7;text-transform:uppercase}.hero{padding-bottom:26px;border-bottom:1px solid var(--line)}h1{font-size:clamp(38px,5vw,66px);line-height:1.06;letter-spacing:-.045em;margin:16px 0 20px;max-width:1120px}h1 span{color:var(--purple)}.dek{font-size:20px;max-width:1080px;color:var(--muted);margin:0 0 24px}.eyebrow,h1,h2,h3,p,li,td,th,.tag,figcaption{overflow-wrap:anywhere}.tags{display:flex;gap:9px;flex-wrap:wrap}.tag{max-width:100%;font-size:12px;border:1px solid var(--line);background:var(--white);border-radius:20px;padding:6px 12px}.tag.primary{border-color:#b8d6f4;background:#edf6ff;color:#225d98}.tag.warn{border-color:#ead8af;background:#fff8e8;color:#735715}
+    nav{display:flex;gap:20px;flex-wrap:wrap;margin:22px 0 0;font-size:14px}a{color:#276bae;text-decoration:none}a:hover{text-decoration:underline}section{margin-top:54px;scroll-margin-top:20px}h2{font-size:30px;line-height:1.2;letter-spacing:-.025em;margin:0 0 17px}h3{font-size:19px;line-height:1.3;margin:0 0 11px}p{margin:8px 0}.lead{font-size:18px;color:var(--muted);max-width:1000px}.callout{background:#eaf3f5;border-left:4px solid var(--teal);padding:19px 23px;margin:24px 0}.callout.warning{background:#fff8e8;border-color:var(--amber)}.callout strong{display:block;margin-bottom:3px}.grid{display:grid;gap:15px}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.card{background:var(--white);border:1px solid var(--line);border-radius:11px;padding:23px;min-width:0}.card p,.small{font-size:14px;color:var(--muted)}.num{font-size:12px;font-weight:800;color:var(--teal);letter-spacing:.08em}.verdict{border-top:4px solid var(--purple)}.recommended{border:2px solid var(--teal)}
+    figure{margin:24px 0;background:var(--white);border:1px solid var(--line);border-radius:11px;overflow:hidden}figcaption{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;display:flex;justify-content:space-between;gap:12px}.figure-body{padding:22px}.figure-note{font-size:12px;color:var(--muted);padding:0 18px 15px}.svg-wrap{width:100%;overflow:hidden}.svg-wrap svg{display:block;width:100%;height:auto;max-width:100%}
+    .table-wrap{overflow-x:auto;background:var(--white);border:1px solid var(--line);border-radius:10px;max-width:100%;margin:16px 0}table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}th,td{padding:12px 14px;text-align:left;border-bottom:1px solid #edf0f4;vertical-align:top}thead{background:var(--panel);font-size:12px;color:#4f545b}tbody tr:nth-child(even){background:#fafbfc}tbody tr:hover{background:#f0f6fc}td:first-child{font-weight:650;white-space:nowrap}.status{display:inline-block;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:750}.must{background:#e6f4ed;color:#226548}.support{background:#edf3fb;color:#285f99}.audit{background:#fff3d7;color:#785b16}
+    .steps{counter-reset:step;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:20px}.step{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:17px;min-width:0}.step:before{counter-increment:step;content:counter(step);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--purple);color:white;font-weight:800;font-size:12px;margin-bottom:12px}.step b{display:block;font-size:14px}.step span{display:block;font-size:12px;color:var(--muted);margin-top:5px}
+    .metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.metric{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px}.metric strong{display:block;font-size:18px}.metric span{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+    details{background:var(--white);border:1px solid var(--line);border-radius:10px;margin:12px 0;padding:18px 20px}summary{cursor:pointer;font-weight:750}.checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;margin-top:15px}.check{font-size:14px;padding-left:24px;position:relative}.check:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:900}
+    code{background:#f0f2f7;padding:2px 5px;border-radius:3px;font-size:12px;overflow-wrap:anywhere}footer{margin-top:55px;padding-top:22px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+    @media(max-width:900px){main{padding:32px 20px 60px}.three,.two,.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.steps{grid-template-columns:1fr 1fr}.dek{font-size:18px}}
+    @media(max-width:580px){main{padding:27px 15px 45px}.three,.two,.metric-grid,.steps,.checklist{grid-template-columns:1fr}h2{font-size:26px}.card{padding:19px}.figure-body{padding:12px}.table-wrap{border-radius:7px}}
+    @media print{body{background:white}main{max-width:none;padding:15px}nav{display:none}.card,figure,.table-wrap{break-inside:avoid}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">Acausal Capital · Production-like testing blueprint</div>
+    <h1>Rolling refits are real. <span>Selection must roll too.</span></h1>
+    <p class="dek">A defensible production simulation must recreate what was known at every decision date, select three momentum and three breakout candidates from prior evidence only, and then preserve every position, cost, funding event and model change that would have occurred live.</p>
+    <div class="tags">
+      <span class="tag primary">Locked: expanding + 730-day rolling walk-forward</span>
+      <span class="tag">6 model slots</span>
+      <span class="tag">2019-09-08 → 2026-09-18 data</span>
+      <span class="tag warn">No retrospective winner leakage</span>
+      <span class="tag">Prospective shadow follows</span>
+    </div>
+    <nav><a href="#answer">The distinction</a><a href="#protocol">Protocol</a><a href="#selection">Top-three selection</a><a href="#metrics">Metrics</a><a href="#composition">Composition visuals</a><a href="#deliverables">Deliverables</a></nav>
+  </header>
+
+  <section id="answer">
+    <h2>Is a quarterly refit during 2026 a rolling refit?</h2>
+    <p class="lead">Yes. But it is a rolling <em>parameter update</em>, not necessarily a rolling <em>model-selection decision</em>. Those must be recorded separately.</p>
+    <div class="grid three">
+      <article class="card"><div class="num">01 · SIGNAL STATE</div><h3>Daily calculation</h3><p>Prices update the breakout/EWMAC forecast, volatility sizing, ranks, positions and funding exposure every trading day.</p></article>
+      <article class="card"><div class="num">02 · MODEL REFIT</div><h3>Scheduled parameter update</h3><p>A quarterly model may refresh scalars, correlations, weights and speed eligibility using history available before the refit. It activates next candle.</p></article>
+      <article class="card verdict"><div class="num">03 · ROSTER SELECTION</div><h3>Which models are allowed live?</h3><p>The top-three roster is a governance decision. It should change only at a predeclared promotion date using completed prior folds—not every time the leaderboard moves.</p></article>
+    </div>
+    <figure>
+      <figcaption><span>One test year: selection is frozen; permitted internal refits continue</span><span class="small">Conceptual—not performance data</span></figcaption>
+      <div class="figure-body svg-wrap">
+        <svg viewBox="0 0 1160 285" role="img" aria-label="Timeline separating model selection from internal refits">
+          <title>Selection versus refitting timeline</title>
+          <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#636870"/></marker></defs>
+          <g id="prior-evidence"><title>Prior evidence used for selection</title><rect x="25" y="38" width="250" height="75" rx="10" fill="#ececf3" stroke="#dfe3eb"/><text x="150" y="67" text-anchor="middle" font-size="14" font-weight="700" fill="#282b30">All data through 31 Dec</text><text x="150" y="91" text-anchor="middle" font-size="12" fill="#636870">score candidates; choose 3 + 3</text></g>
+          <path d="M280 76H350" stroke="#636870" stroke-width="2" marker-end="url(#arrow)"/>
+          <g id="roster-lock"><title>Annual model roster lock</title><rect x="360" y="26" width="180" height="100" rx="12" fill="#7658c9"/><text x="450" y="62" text-anchor="middle" font-size="15" font-weight="800" fill="white">ROSTER LOCK</text><text x="450" y="86" text-anchor="middle" font-size="12" fill="white">three momentum</text><text x="450" y="104" text-anchor="middle" font-size="12" fill="white">three breakout</text></g>
+          <path d="M545 76H610" stroke="#636870" stroke-width="2" marker-end="url(#arrow)"/>
+          <g id="live-year"><title>Live-like test interval</title><rect x="620" y="26" width="510" height="100" rx="12" fill="#eaf3f5" stroke="#268a87" stroke-width="2"/><text x="875" y="51" text-anchor="middle" font-size="14" font-weight="800" fill="#282b30">NEXT CALENDAR YEAR · OUTER TEST FOLD</text><line x1="650" y1="88" x2="1100" y2="88" stroke="#268a87" stroke-width="3"/><circle cx="665" cy="88" r="7" fill="#4c94df"/><circle cx="805" cy="88" r="7" fill="#4c94df"/><circle cx="945" cy="88" r="7" fill="#4c94df"/><circle cx="1085" cy="88" r="7" fill="#4c94df"/><text x="665" y="111" text-anchor="middle" font-size="11" fill="#636870">Jan</text><text x="805" y="111" text-anchor="middle" font-size="11" fill="#636870">Apr</text><text x="945" y="111" text-anchor="middle" font-size="11" fill="#636870">Jul</text><text x="1085" y="111" text-anchor="middle" font-size="11" fill="#636870">Oct</text></g>
+          <g id="refit-lanes"><title>Model-specific refit behavior</title><text x="40" y="174" font-size="13" font-weight="700" fill="#282b30">Inside the locked roster</text><text x="215" y="174" font-size="12" fill="#636870">Quarterly model</text><line x1="355" y1="170" x2="1100" y2="170" stroke="#4c94df" stroke-width="2"/><g fill="#4c94df"><circle cx="665" cy="170" r="5"/><circle cx="805" cy="170" r="5"/><circle cx="945" cy="170" r="5"/><circle cx="1085" cy="170" r="5"/></g><text x="215" y="212" font-size="12" fill="#636870">Annual model</text><line x1="355" y1="208" x2="1100" y2="208" stroke="#268a87" stroke-width="2"/><circle cx="665" cy="208" r="5" fill="#268a87"/><text x="215" y="250" font-size="12" fill="#636870">Frozen model</text><line x1="355" y1="246" x2="1100" y2="246" stroke="#7658c9" stroke-width="2"/><text x="725" y="239" font-size="11" fill="#7658c9">no fitted-parameter updates; signals and risk still update daily</text></g>
+        </svg>
+      </div>
+    </figure>
+    <div class="callout warning"><strong>Why the current 2026 holdout is not the whole answer</strong>It tests causal execution in one common period, but the winning model identity was selected using 2024–2025. It does not show which three models would have been chosen before 2022, 2023, 2024 or 2025, nor how roster churn would have affected a live investor.</div>
+  </section>
+
+  <section id="protocol">
+    <h2>Recommended production-like protocol</h2>
+    <p class="lead">Run both nested expanding-history and fixed rolling-history reconstructions, followed by an untouched prospective shadow ledger seeded from the completed repository results.</p>
+    <div class="grid three">
+      <article class="card recommended"><div class="num">A · HISTORICAL RECONSTRUCTION</div><h3>Nested expanding walk-forward</h3><p>At each 31 December cutoff, rebuild every candidate using only data then available, rank on completed inner validation folds, lock three models per family, and run them through the next year. Internal refits follow each model’s own schedule.</p><p><strong>Outer folds:</strong> 2022, 2023, 2024, 2025 and 2026 YTD, subject to sufficient training coverage.</p></article>
+      <article class="card recommended"><div class="num">B · HISTORICAL RECONSTRUCTION</div><h3>Nested 730-day rolling walk-forward</h3><p>Repeat the same outer folds and selection process using only the trailing 730 calendar days at every selection and fitted-parameter cutoff, with a 365-day minimum. This tests whether discarding older regimes improves adaptation.</p><p><strong>Comparison rule:</strong> identical universe, costs, funding, risk grid and outer folds.</p></article>
+      <article class="card recommended"><div class="num">C · LIVE REHEARSAL</div><h3>Prospective shadow portfolio</h3><p>Seed the six-model roster directly from the completed momentum and Carver5 result files, freeze code/config/data hashes, and emit next-open positions every day. Record the signal as emitted—not reconstructed later—and compare it with simulated fills and actual account funding where applicable.</p><p><strong>Minimum useful period:</strong> six months; twelve months is materially better.</p></article>
+    </div>
+    <div class="steps">
+      <div class="step"><b>Snapshot</b><span>Universe, data cutoff, fees, funding and code hashes.</span></div>
+      <div class="step"><b>Train causally</b><span>Expanding history; one-year minimum for fitted parameters.</span></div>
+      <div class="step"><b>Select 3 + 3</b><span>Prior folds only; diversity guard and deterministic ties.</span></div>
+      <div class="step"><b>Trade next fold</b><span>Next-open activation, event funding and realized costs.</span></div>
+      <div class="step"><b>Stitch OOS</b><span>Concatenate only outer-fold returns and positions.</span></div>
+    </div>
+    <div class="callout"><strong>Separation that makes this production-like</strong>Freeze the <em>roster</em> for a full outer fold, but allow each selected model’s predeclared parameter schedule to operate. A quarterly model refits quarterly; a frozen model remains frozen; all models still recalculate forecasts and risk daily.</div>
+  </section>
+
+  <section id="selection">
+    <h2>How to define “best three” without fooling yourself</h2>
+    <div class="grid three">
+      <article class="card"><div class="num">VIEW 1 · REQUIRED</div><h3>Raw top three</h3><p>Rank eligible configurations by prior-fold net Sharpe, preserving the agreed tie-breaks: lower turnover, then lower gross cap, lower target volatility and configuration ID.</p></article>
+      <article class="card"><div class="num">VIEW 2 · RECOMMENDED</div><h3>Diversified top three</h3><p>Start with the raw winner, then require subsequent selections to have prior-fold daily-return correlation below 0.95 and preferably differ in refit schedule or construction. Show exceptions explicitly.</p></article>
+      <article class="card"><div class="num">VIEW 3 · DIAGNOSTIC ONLY</div><h3>Today’s winners backcast</h3><p>Run today’s top three across all history only as a descriptive strategy test. Label it retrospective and never mix it with the stitched production-like OOS record.</p></article>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Decision</th><th>Recommendation</th><th>Why</th><th>Audit field</th></tr></thead>
+        <tbody>
+          <tr><td>Roster decision</td><td>Annual</td><td>Reduces model chasing while still allowing scheduled internal refits.</td><td><code>roster_effective_from</code></td></tr>
+          <tr><td>Candidate score</td><td>Net Sharpe on completed prior folds</td><td>Matches the existing selection rule and includes fees, slippage and funding.</td><td><code>selection_score</code></td></tr>
+          <tr><td>Family slots</td><td>3 momentum + 3 breakout</td><td>Prevents one family from crowding out the comparison.</td><td><code>family_slot</code></td></tr>
+          <tr><td>Within-family allocation</td><td>Equal risk, one-third each</td><td>Does not re-optimize noisy expected returns.</td><td><code>family_risk_weight</code></td></tr>
+          <tr><td>Combined portfolio</td><td>50% momentum / 50% breakout risk</td><td>Show separately from six standalone tracks; unused risk stays in cash.</td><td><code>sleeve_risk_weight</code></td></tr>
+          <tr><td>Correlation guard</td><td>&lt; 0.95 on prior OOS folds</td><td>Avoids reporting three parameter clones as diversification.</td><td><code>selection_correlation</code></td></tr>
+          <tr><td>Promotion during fold</td><td>None</td><td>Prevents a moving leaderboard from contaminating the next-fold test.</td><td><code>roster_version</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>Locked prospective seed roster from completed results</strong>Momentum: <code>ts_equal_vol60</code>, <code>ts_shrink_75_semiannual_vol60</code>, <code>ts_shrink_90_semiannual_vol60</code>. Breakout: <code>breakout_crypto_equal_frozen_vol60</code>, <code>breakout_crypto_shrink_75_frozen_vol60</code>, <code>breakout_crypto_shrink_90_frozen_vol60</code>. The three breakout leaders are nearly identical and will be disclosed as correlated variants, not three independent diversifiers.</div>
+  </section>
+
+  <section id="metrics">
+    <h2>Metrics the rolling report must publish</h2>
+    <p class="lead">Do not compress this into one full-period Sharpe. Report every outer fold, the stitched OOS path, rolling windows, selection stability and implementation drag.</p>
+    <div class="metric-grid">
+      <div class="metric"><strong>Net return quality</strong><span>CAGR, net Sharpe, Sortino, Calmar, hit rate, profit factor.</span></div>
+      <div class="metric"><strong>Risk and tails</strong><span>Realized volatility, max drawdown, recovery time, worst week/month, 95% CVaR.</span></div>
+      <div class="metric"><strong>Implementation</strong><span>Turnover, fees, slippage, funding paid/received/net, capacity and missed fills.</span></div>
+      <div class="metric"><strong>Exposure</strong><span>Gross, net, long/short counts, top-5 concentration, BTC beta and sector exposure.</span></div>
+      <div class="metric"><strong>Rolling 90-day</strong><span>Sharpe, return, volatility, funding drag, turnover and BTC correlation.</span></div>
+      <div class="metric"><strong>Rolling 365-day</strong><span>Sharpe, return, volatility, drawdown, beta, alpha and cost ratio.</span></div>
+      <div class="metric"><strong>Across folds</strong><span>Median/worst Sharpe, Sharpe dispersion, positive-fold rate and fold drawdowns.</span></div>
+      <div class="metric"><strong>Selection stability</strong><span>Roster churn, model survival, rank migration and parameter/refit changes.</span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Report level</th><th>Rows</th><th>Required columns</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Outer-fold scorecard</td><td>Model × test year</td><td>Return, vol, Sharpe, Sortino, drawdown, turnover, costs, funding, beta, observations</td><td><span class="status must">Must have</span></td></tr>
+          <tr><td>Stitched OOS</td><td>Six models + two family ensembles + combined portfolio</td><td>Same metrics plus confidence intervals and worst fold</td><td><span class="status must">Must have</span></td></tr>
+          <tr><td>Rolling windows</td><td>Daily timestamp × model</td><td>90d/365d Sharpe, vol, beta, correlation, turnover and funding drag</td><td><span class="status must">Must have</span></td></tr>
+          <tr><td>Selection ledger</td><td>Decision date × candidate</td><td>Rank, prior-only score, tie breaks, correlation gate, selected/rejected reason</td><td><span class="status must">Must have</span></td></tr>
+          <tr><td>Multiplicity</td><td>Family × fold</td><td>Trials count, deflated Sharpe estimate, winner’s curse warning</td><td><span class="status support">Strong support</span></td></tr>
+          <tr><td>Prospective variance</td><td>Emitted vs reconstructed signal</td><td>Position difference, P&amp;L difference, data revision and execution deviation</td><td><span class="status audit">Live audit</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="composition">
+    <h2>Visuals for how every portfolio changed through time</h2>
+    <p class="lead">Each of the six selected model slots needs its own composition page. The family ensembles and combined portfolio need equivalent pages. For crowded universes, preserve exact data in the hover/table layer and aggregate the visual to the top contributors plus “Other.”</p>
+    <figure>
+      <figcaption><span>Required portfolio-state dashboard for each strategy</span><span class="small">Illustrative layout—the final charts use stored positions</span></figcaption>
+      <div class="figure-body svg-wrap">
+        <svg viewBox="0 0 1160 610" role="img" aria-label="Mock dashboard showing rolling performance and portfolio composition">
+          <title>Per-strategy rolling performance and composition dashboard</title>
+          <g id="equity-drawdown"><title>Stitched out-of-sample equity and drawdown</title><rect x="20" y="20" width="720" height="210" rx="10" fill="#fff" stroke="#dfe3eb"/><text x="42" y="50" font-size="14" font-weight="800" fill="#282b30">STITCHED OUT-OF-SAMPLE EQUITY + DRAWDOWN</text><path d="M45 177 C110 160 125 175 190 129 S300 155 365 105 S480 120 545 73 S650 82 715 49" fill="none" stroke="#7658c9" stroke-width="4"/><path d="M45 194 C120 188 155 214 230 194 S345 202 420 178 S570 210 715 183" fill="none" stroke="#bd4e4e" stroke-width="2"/><g font-size="10" fill="#636870"><text x="45" y="217">2022</text><text x="205" y="217">2023</text><text x="365" y="217">2024</text><text x="525" y="217">2025</text><text x="685" y="217">2026</text></g></g>
+          <g id="rolling-sharpe"><title>Rolling 90 and 365 day Sharpe</title><rect x="760" y="20" width="380" height="210" rx="10" fill="#fff" stroke="#dfe3eb"/><text x="782" y="50" font-size="14" font-weight="800" fill="#282b30">ROLLING SHARPE</text><line x1="785" y1="135" x2="1115" y2="135" stroke="#dfe3eb"/><path d="M785 120 C825 55 860 196 905 107 S990 65 1025 154 S1080 106 1115 82" fill="none" stroke="#4c94df" stroke-width="3"/><path d="M785 145 C845 120 890 159 945 121 S1030 117 1115 97" fill="none" stroke="#268a87" stroke-width="3"/><text x="786" y="207" font-size="11" fill="#4c94df">90d</text><text x="833" y="207" font-size="11" fill="#268a87">365d</text></g>
+          <g id="weight-heatmap"><title>Signed ticker weight heatmap</title><rect x="20" y="250" width="720" height="330" rx="10" fill="#fff" stroke="#dfe3eb"/><text x="42" y="280" font-size="14" font-weight="800" fill="#282b30">SIGNED TICKER WEIGHT HEATMAP · TOP 15 + OTHER</text><g font-size="10" fill="#636870"><text x="42" y="314">BTC</text><text x="42" y="350">ETH</text><text x="42" y="386">SOL</text><text x="42" y="422">BNB</text><text x="42" y="458">XRP</text><text x="42" y="494">Other long</text><text x="42" y="530">Other short</text></g><g transform="translate(120 294)"><rect width="100" height="28" fill="#a9d7d1"/><rect x="102" width="100" height="28" fill="#d9edf0"/><rect x="204" width="100" height="28" fill="#e7c5cf"/><rect x="306" width="100" height="28" fill="#8bc8bc"/><rect x="408" width="100" height="28" fill="#67b3a5"/><rect x="510" width="86" height="28" fill="#e7c5cf"/><rect y="36" width="100" height="28" fill="#74baad"/><rect x="102" y="36" width="100" height="28" fill="#97cec5"/><rect x="204" y="36" width="100" height="28" fill="#d9edf0"/><rect x="306" y="36" width="100" height="28" fill="#ddb0bd"/><rect x="408" y="36" width="100" height="28" fill="#d9edf0"/><rect x="510" y="36" width="86" height="28" fill="#8bc8bc"/><rect y="72" width="100" height="28" fill="#efd7dd"/><rect x="102" y="72" width="100" height="28" fill="#e7c5cf"/><rect x="204" y="72" width="100" height="28" fill="#a9d7d1"/><rect x="306" y="72" width="100" height="28" fill="#67b3a5"/><rect x="408" y="72" width="100" height="28" fill="#97cec5"/><rect x="510" y="72" width="86" height="28" fill="#d9edf0"/><rect y="108" width="100" height="28" fill="#d9edf0"/><rect x="102" y="108" width="100" height="28" fill="#97cec5"/><rect x="204" y="108" width="100" height="28" fill="#74baad"/><rect x="306" y="108" width="100" height="28" fill="#e7c5cf"/><rect x="408" y="108" width="100" height="28" fill="#ddb0bd"/><rect x="510" y="108" width="86" height="28" fill="#efd7dd"/><rect y="144" width="100" height="28" fill="#ddb0bd"/><rect x="102" y="144" width="100" height="28" fill="#d9edf0"/><rect x="204" y="144" width="100" height="28" fill="#8bc8bc"/><rect x="306" y="144" width="100" height="28" fill="#97cec5"/><rect x="408" y="144" width="100" height="28" fill="#efd7dd"/><rect x="510" y="144" width="86" height="28" fill="#67b3a5"/><rect y="180" width="100" height="28" fill="#a9d7d1"/><rect x="102" y="180" width="100" height="28" fill="#97cec5"/><rect x="204" y="180" width="100" height="28" fill="#74baad"/><rect x="306" y="180" width="100" height="28" fill="#a9d7d1"/><rect x="408" y="180" width="100" height="28" fill="#8bc8bc"/><rect x="510" y="180" width="86" height="28" fill="#74baad"/><rect y="216" width="100" height="28" fill="#e7c5cf"/><rect x="102" y="216" width="100" height="28" fill="#ddb0bd"/><rect x="204" y="216" width="100" height="28" fill="#efd7dd"/><rect x="306" y="216" width="100" height="28" fill="#ddb0bd"/><rect x="408" y="216" width="100" height="28" fill="#e7c5cf"/><rect x="510" y="216" width="86" height="28" fill="#ddb0bd"/><g font-size="10" fill="#636870"><text x="40" y="272">2022</text><text x="142" y="272">2023</text><text x="244" y="272">2024</text><text x="346" y="272">2025</text><text x="448" y="272">2026</text></g></g></g>
+          <g id="exposure-stack"><title>Long short gross and net exposure</title><rect x="760" y="250" width="380" height="155" rx="10" fill="#fff" stroke="#dfe3eb"/><text x="782" y="280" font-size="14" font-weight="800" fill="#282b30">EXPOSURE THROUGH TIME</text><path d="M785 360 C840 320 890 352 945 310 S1055 348 1115 299 L1115 374 L785 374Z" fill="#b8ddd6"/><path d="M785 374 C840 391 900 360 955 392 S1065 368 1115 395 L1115 374Z" fill="#e6bec9"/><line x1="785" y1="374" x2="1115" y2="374" stroke="#636870"/><text x="785" y="394" font-size="10" fill="#268a87">long gross</text><text x="1038" y="394" font-size="10" fill="#bd4e4e">short gross</text></g>
+          <g id="composition-kpis"><title>Portfolio composition key indicators</title><rect x="760" y="425" width="380" height="155" rx="10" fill="#fff" stroke="#dfe3eb"/><text x="782" y="455" font-size="14" font-weight="800" fill="#282b30">COMPOSITION KPIs</text><g font-size="11" fill="#636870"><text x="785" y="488">Gross / net exposure</text><text x="785" y="516">Long / short positions</text><text x="785" y="544">Top-5 risk concentration</text><text x="785" y="572">Turnover / funding drag</text></g><g font-size="13" font-weight="800" text-anchor="end" fill="#282b30"><text x="1115" y="488">1.42× / −0.08×</text><text x="1115" y="516">18 / 23</text><text x="1115" y="544">37.4%</text><text x="1115" y="572">41× / −1.8%</text></g></g>
+        </svg>
+      </div>
+      <p class="figure-note">The shapes and figures above are illustrative placeholders. The implementation must render these panels from timestamped target and held-position ledgers for every selected model and ensemble.</p>
+    </figure>
+    <div class="grid three">
+      <article class="card"><div class="num">PER MODEL</div><h3>Signed-weight history</h3><p>Top-15 ticker heatmap plus Other; stacked long and short exposure; largest position; number of active names; entry/exit dates; model/refit markers.</p></article>
+      <article class="card"><div class="num">PER FAMILY</div><h3>Model allocation and disagreement</h3><p>Three model risk weights, pairwise correlation, sign agreement, forecast dispersion and contribution to family P&amp;L through time.</p></article>
+      <article class="card"><div class="num">BREAKOUT-SPECIFIC</div><h3>Rule eligibility and contribution</h3><p>Ticker × horizon speed-filter heatmap, active-rule count, FDM path and 10/20/40/80/160 contribution. Momentum gets equivalent EWMAC component attribution.</p></article>
+    </div>
+    <details open><summary>Minimum chart set for every one of the six strategy slots</summary><div class="checklist"><div class="check">Stitched OOS equity and underwater drawdown</div><div class="check">90-day and 365-day rolling Sharpe</div><div class="check">Signed ticker-weight heatmap</div><div class="check">Long gross, short gross and net exposure</div><div class="check">Top-5 and top-10 risk concentration</div><div class="check">Ticker count, entries, exits and churn</div><div class="check">Rolling turnover, fees and slippage</div><div class="check">Funding paid, received and net</div><div class="check">BTC beta and correlation by window</div><div class="check">Ticker, sector and component attribution</div></div></details>
+  </section>
+
+  <section id="deliverables">
+    <h2>Concrete build and output contract</h2>
+    <div class="grid two">
+      <article class="card"><div class="num">ENGINE</div><h3>New walk-forward selector</h3><p>Recreate candidate fitting and selection at each annual cutoff; store every candidate’s prior-only score and rejection reason; execute selected configurations over the next fold using existing causal portfolio, fee, slippage and funding logic.</p></article>
+      <article class="card"><div class="num">LEDGER</div><h3>Daily portfolio state</h3><p>For model, family and combined levels, persist target weight, held weight, quantity, notional, forecast, risk contribution, cost, funding, return contribution, data cutoff, refit version and roster version.</p></article>
+      <article class="card"><div class="num">REPORT</div><h3>Production simulation report</h3><p>Outer-fold scorecards, stitched OOS results, rolling metrics, selection stability, model-by-model composition pages, family ensembles, combined portfolio, implementation shortfall and methodological limitations.</p></article>
+      <article class="card"><div class="num">SHADOW</div><h3>Immutable forward manifests</h3><p>Daily emitted signals and hashes, expected positions and funding, actual timestamps, reconstructed-versus-emitted reconciliation, and explicit alerts for missing data, changed mappings or funding coverage.</p></article>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Artifact</th><th>Contents</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>rolling_selection_ledger.parquet</code></td><td>All candidates, scores, ranks, gates and six selected slots at every cutoff</td><td>Proves no winner leakage</td></tr>
+          <tr><td><code>outer_fold_metrics.parquet</code></td><td>Model × family × fold performance and implementation metrics</td><td>Shows regime consistency</td></tr>
+          <tr><td><code>daily_portfolio_state.parquet</code></td><td>Exact ticker/model weights, positions, forecasts, costs, funding and contributions</td><td>Drives composition visuals</td></tr>
+          <tr><td><code>stitched_oos_returns.parquet</code></td><td>Six slots, two family ensembles and combined portfolio</td><td>Primary historical production simulation</td></tr>
+          <tr><td><code>production_shadow.sqlite</code></td><td>Append-only emitted signals, manifests and later reconciliation</td><td>Prospective evidence</td></tr>
+          <tr><td><code>production_like_study.html</code></td><td>Full strategy report with fold, rolling and composition analysis</td><td>Human review and promotion decision</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warning"><strong>Acceptance rule</strong>The historical headline must be the concatenation of outer test folds only. No row may be generated by a model roster selected with data from that row or later. Today’s full-sample top-three backcast must remain a separately labelled diagnostic.</div>
+  </section>
+
+  <section>
+    <h2>Recommendation</h2>
+    <p class="lead">Build the annual nested selector and daily composition ledger first. Run the six models separately, then equal-risk family ensembles, then the 50/50 momentum–breakout portfolio. Keep annual roster decisions distinct from each model’s internal quarterly/semiannual/annual refits. Start a frozen prospective shadow roster immediately after the historical reconstruction is complete.</p>
+    <div class="callout"><strong>What this answers that the current report does not</strong>Which models would actually have been chosen at each date, how long they survived, how their holdings evolved, whether performance persisted across folds, and what an investor would have experienced after funding and execution costs.</div>
+  </section>
+
+  <footer>Design source: the repository’s existing Acausal Capital editorial research-report system—matching its typography, colors, cards, tables and evidence-first hierarchy. This is a design blueprint, not a completed rolling backtest; illustrative graphics are explicitly labelled.</footer>
+</main>
+</body>
+</html>
