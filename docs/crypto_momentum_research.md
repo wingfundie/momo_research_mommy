@@ -9,7 +9,8 @@ This pipeline is a shadow research system. It does not alter the existing produc
 - Historical point-in-time FDV membership is used only when supplied. The current run is explicitly labelled as a current-universe historical fallback.
 - Headline next-open P&L uses forward Binance open-to-open returns. Next-close uses forward close-to-close returns as a sensitivity.
 - Historical public funding is settled event by event. Actual account `FUNDING_FEE` records are archived separately and reconciled without assuming all account exposure belongs to the model.
-- Breakout has signal-model parity with EWMAC: pooled/shrunk/equal horizon weights, quarterly through frozen refits, four volatility windows, individual-horizon controls and a legacy per-ticker Optuna reference.
+- The original breakout run is retained as v1 evidence but is invalid for model selection because its channel forecasts omitted Carver's horizon/4 EWMA smoothing.
+- Breakout v2 uses the shared production/research calculation, 10/20/40/80/160-day horizons, Carver scalars, causal per-ticker cost-speed eligibility, causal or fixed FDM, combined-only selection, and separate single-horizon controls. The 320-day rule is excluded by design.
 - Legacy Optuna coverage is 64 valid tickers and 33 explicit equal-weight fallbacks for both EWMAC and breakout. These static full-sample references are excluded from causal headline selection.
 
 ## Rebuild order
@@ -24,6 +25,8 @@ python scripts/reconcile_actual_funding_archive.py
 python scripts/rebuild_complete_study_ledger.py
 python scripts/build_full_crypto_study_report.py
 python scripts/build_crypto_momentum_telegram_summary.py
+python scripts/execute_carver_breakout_v2.py
+python scripts/build_carver_breakout_v2_report.py
 ```
 
 The Binance asynchronous account-history endpoint has high request weight. `archive_binance_funding_income.py` deliberately limits new jobs and polls through `MOMO_MAX_NEW_ASYNC_JOBS` and `MOMO_MAX_ASYNC_POLLS`.
@@ -38,6 +41,9 @@ The Binance asynchronous account-history endpoint has high request weight. `arch
 - `complete_results/actual_funding_reconciliation.parquet`: actual account funding, public funding rate, implied account notional and model-direction reconciliation.
 - `reports/crypto_momentum_complete_study_20260920.html`: full offline research report.
 - `reports/crypto_momentum_ticker_analytics_20260920.html`: searchable all-ticker analytics companion with component signals, attribution, risk and funding.
+- `complete_results_carver5_v2/`: versioned corrected breakout configurations, returns, funding, eligibility, FDM, component forecasts, signals and ticker attribution.
+- `reports/crypto_momentum_complete_study_carver5_v2_20260920.html`: corrected comprehensive Carver5 breakout study.
+- `reports/crypto_breakout_ticker_analytics_carver5_v2_20260920.html`: corrected breakout ticker companion.
 
 ## OOS interpretation
 

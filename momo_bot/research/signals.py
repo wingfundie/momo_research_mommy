@@ -6,6 +6,8 @@ from typing import Mapping
 import numpy as np
 import pandas as pd
 
+from momo_bot.strategies.forecasts import calc_breakout_forecast
+
 from .config import EWMAC_RULES, SignalConfig
 
 
@@ -250,12 +252,8 @@ def long_only_rank_weights(percentiles: pd.DataFrame, absolute_forecasts: pd.Dat
 
 
 def breakout_forecast(price: pd.Series, horizon: int = 64, cap: float = 20.0) -> pd.Series:
-    """Causal channel breakout reference with a complete-window warm-up."""
-    high = price.rolling(horizon, min_periods=horizon).max()
-    low = price.rolling(horizon, min_periods=horizon).min()
-    midpoint = (high + low) / 2.0
-    spread = (high - low).replace(0.0, np.nan)
-    return (40.0 * (price - midpoint) / spread).clip(-cap, cap)
+    """Causal Carver breakout reference with complete warm-up and h/4 smoothing."""
+    return calc_breakout_forecast(price, horizon=horizon).clip(-cap, cap)
 
 
 def rank_information_coefficient(

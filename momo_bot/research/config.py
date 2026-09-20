@@ -5,6 +5,13 @@ from pathlib import Path
 
 
 EWMAC_RULES: tuple[tuple[int, int], ...] = ((2, 8), (4, 16), (8, 32), (16, 64), (32, 128))
+CARVER_BREAKOUT_HORIZONS: tuple[int, ...] = (10, 20, 40, 80, 160)
+CARVER_BREAKOUT_SCALARS: tuple[tuple[int, float], ...] = (
+    (10, 0.60), (20, 0.67), (40, 0.70), (80, 0.73), (160, 0.74),
+)
+CARVER_BREAKOUT_TURNOVER: tuple[tuple[int, float], ...] = (
+    (10, 74.7), (20, 35.1), (40, 17.4), (80, 8.7), (160, 4.2),
+)
 
 
 @dataclass(frozen=True)
@@ -31,6 +38,21 @@ class SignalConfig:
     shrinkage_to_equal: float = 0.80
     max_rule_weight: float = 0.25
     smoothing_days: int = 125
+
+
+@dataclass(frozen=True)
+class BreakoutSignalConfig:
+    horizons: tuple[int, ...] = CARVER_BREAKOUT_HORIZONS
+    forecast_scalars: tuple[tuple[int, float], ...] = CARVER_BREAKOUT_SCALARS
+    expected_turnover: tuple[tuple[int, float], ...] = CARVER_BREAKOUT_TURNOVER
+    smoothing_divisor: int = 4
+    forecast_cap: float = 20.0
+    cost_budget_sr: float = 0.15
+    fdm_mode: str = "causal_expanding"
+    fixed_fdm: float = 1.20
+    fdm_cap: float = 2.5
+    minimum_training_days: int = 365
+    refit_schedule: str = "quarterly"
 
 
 @dataclass(frozen=True)

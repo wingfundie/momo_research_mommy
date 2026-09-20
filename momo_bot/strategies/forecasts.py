@@ -30,7 +30,26 @@ def get_signal(
     return forecast.apply(lambda x: (x if ((x < 20) & (x > -20)) else (-20 if x < -20 else 20)))
 
 
-def calc_breakout_forecast(price_series: pd.Series, horizon: int) -> pd.Series:
+def calc_breakout_forecast(
+    price_series: pd.Series | pd.DataFrame,
+    horizon: int,
+    *,
+    smoothing_divisor: int = 4,
+) -> pd.Series | pd.DataFrame:
+    """Return Carver's smoothed channel-location breakout forecast.
+
+    The complete rolling range is required before the raw forecast exists.  The
+    raw channel location is then smoothed with an EWMA span of ``horizon / 4``.
+    Scaling and the +/-20 component/final caps are intentionally handled by the
+    caller because they are model configuration rather than signal mechanics.
+
+    The implementation accepts a Series for production and a DataFrame for the
+    pooled research runner so both paths share exactly the same calculation.
+    """
+    if horizon <= 0:
+        raise ValueError("horizon must be positive")
+    if smoothing_divisor <= 0:
+        raise ValueError("smoothing_divisor must be positive")
     rolling_max = price_series.rolling(window=horizon, min_periods=horizon).max()
     rolling_min = price_series.rolling(window=horizon, min_periods=horizon).min()
 
@@ -39,6 +58,5 @@ def calc_breakout_forecast(price_series: pd.Series, horizon: int) -> pd.Series:
     price_range[price_range < 1e-8] = np.nan
 
     raw_forecast = 40.0 * (price_series - rolling_mean) / price_range
-    smoothing_period = max(1, int(horizon / 4))
+    smoothing_period = max(1, int(horizon / smoothing_divisor))
     return raw_forecast.ewm(span=smoothing_period, adjust=False).mean()
-

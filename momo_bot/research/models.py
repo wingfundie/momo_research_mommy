@@ -65,6 +65,20 @@ class SignalRecord:
     target_notional: float | None = None
     expected_funding_next: float | None = None
     expected_funding_24h: float | None = None
+    component_eligibility: Mapping[str, bool] = field(default_factory=dict)
+    forecast_diversification_multiplier: float | None = None
+
+
+@dataclass(frozen=True)
+class BreakoutEligibilityRecord:
+    timestamp: datetime
+    symbol: str
+    horizon: int
+    expected_turnover: float
+    cost_per_trade_sr: float
+    maximum_turnover: float
+    eligible: bool
+    reason: str
 
 
 @dataclass(frozen=True)
