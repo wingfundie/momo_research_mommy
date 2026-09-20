@@ -37,6 +37,7 @@ The Binance asynchronous account-history endpoint has high request weight. `arch
 - `complete_results/daily_signal_records.parquet`: model/ticker forecasts, ranks, positions, hashes and quality flags.
 - `complete_results/actual_funding_reconciliation.parquet`: actual account funding, public funding rate, implied account notional and model-direction reconciliation.
 - `reports/crypto_momentum_complete_study_20260920.html`: full offline research report.
+- `reports/crypto_momentum_ticker_analytics_20260920.html`: searchable all-ticker analytics companion with component signals, attribution, risk and funding.
 
 ## OOS interpretation
 
