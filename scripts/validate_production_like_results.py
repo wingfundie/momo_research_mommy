@@ -38,6 +38,11 @@ def main() -> None:
     grouped = selected.groupby(["variant", "fold", "family"])
     assert grouped.size().eq(3).all() and grouped.model.nunique().eq(3).all()
     assert manifest["selection_uses_holdout_metrics"] is False
+    coverage = manifest["funding_coverage"]
+    assert coverage["events"] == coverage["finite_mark_prices"] + coverage["unresolved_pre_eligibility"]
+    assert coverage["unresolved_post_eligibility"] == 0
+    first_outer_year = pd.to_datetime(state.timestamp).dt.year.eq(2022)
+    assert state.loc[first_outer_year, "funding"].abs().sum() > 0
     assert set(rolling.window_days) == {90, 365}
     assert not selected.model.str.contains("320|control|optuna|legacy|unsmoothed", case=False, regex=True).any()
     assert all(pd.Timestamp(fold["cutoff"]) < pd.Timestamp(fold["test_start"]) for fold in manifest["outer_folds"])

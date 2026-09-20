@@ -50,7 +50,10 @@ The historical headline is the concatenation of outer test folds only. No observ
 python scripts/execute_production_like_walkforward.py
 python scripts/initialize_production_shadow.py
 python scripts/build_production_like_walkforward_report.py
+python scripts/validate_production_like_results.py
 ```
+
+If the archived funding-rate rows contain missing event mark prices, run `python scripts/backfill_funding_mark_prices.py` before the study. The backfill uses Binance USD-M eight-hour mark-price klines at the event timestamp and records source provenance; headline simulation now fails rather than silently treating a missing mark as zero funding.
 
 Versioned results are written to `data_store/crypto_momentum_research/production_like_walkforward_v1/`. The comprehensive report is `reports/crypto_trend_production_like_walkforward_20260920.html`; the per-strategy holdings companion is `reports/crypto_trend_production_like_composition_20260920.html`.
 

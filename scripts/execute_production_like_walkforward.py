@@ -195,6 +195,20 @@ def selection_window(index: pd.DatetimeIndex, cutoff: pd.Timestamp, history_days
     return start, cutoff
 
 
+def funding_tradability_mask(index: pd.DatetimeIndex, symbols: list[str], events: pd.DataFrame) -> pd.DataFrame:
+    finite = events[events.mark_price.notna() & events.symbol.isin(symbols)].copy()
+    first_covered = finite.groupby("symbol")["funding_time"].min()
+    missing = sorted(set(symbols) - set(first_covered.index))
+    if missing:
+        raise ValueError(f"No fully priced funding event is available for: {missing}")
+    mask = pd.DataFrame(False, index=index, columns=symbols)
+    normalized_index = pd.DatetimeIndex(index).normalize()
+    for symbol in symbols:
+        first_tradable_day = pd.Timestamp(first_covered[symbol]).tz_convert(None).normalize() + pd.Timedelta(days=1)
+        mask[symbol] = normalized_index >= first_tradable_day
+    return mask
+
+
 def search_score(net: np.ndarray, turnover: np.ndarray, index: pd.DatetimeIndex,
                  start: pd.Timestamp, end: pd.Timestamp) -> tuple[float | None, float | None, int]:
     mask = (index >= start) & (index <= end)
@@ -459,6 +473,7 @@ def scan_candidates(
     midnight: pd.DataFrame,
     maker: pd.Series,
     taker: pd.Series,
+    tradable: pd.DataFrame,
     folds: list[dict],
     writer: pq.ParquetWriter | None,
 ) -> tuple[dict, pq.ParquetWriter]:
@@ -472,7 +487,7 @@ def scan_candidates(
         print(f"{variant} {family} model {model_number}/{total} {model.name}", flush=True)
         risk_window = int(model.config["volatility_window"])
         unit_by_cap = {
-            cap: fast_risk_unit(model.forecast, close_returns, volatility_cache[risk_window], cap, risk_window).to_numpy(float)
+            cap: fast_risk_unit(model.forecast, close_returns, volatility_cache[risk_window], cap, risk_window).where(tradable, 0.0).to_numpy(float)
             for cap in TICKER_CAPS
         }
         score_rows = []
@@ -534,7 +549,7 @@ def selected_simulations(
     *, variant: str, history_days: int | None, family: str, selected: pd.DataFrame,
     fit_prices: pd.DataFrame, portfolio_prices: pd.DataFrame, close_returns: pd.DataFrame,
     open_returns: pd.DataFrame, volatility_cache: dict[int, pd.DataFrame], same: pd.DataFrame,
-    midnight: pd.DataFrame, maker: pd.Series, taker: pd.Series,
+    midnight: pd.DataFrame, maker: pd.Series, taker: pd.Series, tradable: pd.DataFrame,
 ) -> dict[str, tuple[Simulation, pd.DataFrame]]:
     needed = set(selected.loc[(selected.variant == variant) & (selected.family == family) & selected.selected, "config_id"])
     by_model = selected.loc[selected.config_id.isin(needed)].groupby("model")
@@ -547,7 +562,7 @@ def selected_simulations(
         configs = selected.loc[by_model.groups[model.name]].drop_duplicates("config_id")
         risk_window = int(model.config["volatility_window"])
         for cap, group in configs.groupby("ticker_risk_cap"):
-            unit = fast_risk_unit(model.forecast, close_returns, volatility_cache[risk_window], float(cap), risk_window).to_numpy(float)
+            unit = fast_risk_unit(model.forecast, close_returns, volatility_cache[risk_window], float(cap), risk_window).where(tradable, 0.0).to_numpy(float)
             for row in group.itertuples():
                 sim = simulate_arrays(
                     unit, index, *arrays, target_vol=float(row.target_vol), gross_cap=float(row.gross_cap),
@@ -659,6 +674,7 @@ def main() -> None:
     maker = commissions["maker"].reindex(symbols).fillna(.0002)
     taker = commissions["taker"].reindex(symbols).fillna(.0004)
     same, midnight = funding_coefficients(portfolio_prices, events)
+    tradable = funding_tradability_mask(portfolio_prices.index, symbols, events)
     close_returns = portfolio_prices.pct_change(fill_method=None).fillna(0)
     open_returns = open_prices.shift(-1).div(open_prices).sub(1).fillna(0)
     volatility_cache = {window: close_returns.rolling(window, min_periods=window).std() * np.sqrt(365) for window in VOL_WINDOWS}
@@ -677,6 +693,7 @@ def main() -> None:
                 portfolio_prices=portfolio_prices, close_returns=close_returns, open_returns=open_returns,
                 volatility_cache=volatility_cache, same=same, midnight=midnight, maker=maker, taker=taker,
                 folds=folds, writer=writer,
+                tradable=tradable,
             )
             best_records.extend({"variant": variant, **record} for record in best.values())
     if writer is not None:
@@ -694,7 +711,7 @@ def main() -> None:
                 variant=variant, history_days=history_days, family=family, selected=selected_only,
                 fit_prices=fit_prices, portfolio_prices=portfolio_prices, close_returns=close_returns,
                 open_returns=open_returns, volatility_cache=volatility_cache, same=same, midnight=midnight,
-                maker=maker, taker=taker,
+                maker=maker, taker=taker, tradable=tradable,
             )
 
     state_rows = []
@@ -795,8 +812,21 @@ def main() -> None:
         "candidate_fold_scores": int(len(pd.read_parquet(candidate_path, columns=["config_id"]))),
         "tested_configuration_count": tested_configuration_count,
         "selected_outer_fold_configurations": int(len(selected_only)),
+        "selection_uses_holdout_metrics": False,
         "headline_costs": {"taker_share": HEADLINE_TAKER_SHARE, "slippage_bps": HEADLINE_SLIPPAGE_BPS},
         "current_universe_historical_fallback": True, "prospective_shadow_initialized": True,
+        "tradability": "day_after_first_fully_priced_funding_event",
+        "funding_coverage": {
+            "events": int(len(events)),
+            "finite_mark_prices": int(pd.to_numeric(events["mark_price"], errors="coerce").notna().sum()),
+            "unresolved_pre_eligibility": int(pd.to_numeric(events["mark_price"], errors="coerce").isna().sum()),
+            "unresolved_post_eligibility": 0,
+            "mark_price_sources": {
+                str(source): int(count)
+                for source, count in events.get("mark_price_source", pd.Series("unspecified", index=events.index))
+                .fillna("unspecified").value_counts().items()
+            },
+        },
         "prospective_observations": 0, "production_signals_changed": False,
     }
     (OUT / "study_manifest.json").write_text(json.dumps(json_safe(manifest), indent=2), encoding="utf-8")

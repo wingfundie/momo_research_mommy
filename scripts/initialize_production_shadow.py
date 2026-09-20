@@ -13,7 +13,9 @@ if str(ROOT) not in sys.path:
 
 from scripts.execute_complete_crypto_study import VOL_WINDOWS, fast_risk_unit, load_full_price_panel
 from scripts.execute_full_crypto_study import funding_coefficients
-from scripts.execute_production_like_walkforward import INPUTS, LOCKED, OUT, iter_breakout_models, iter_momentum_models, simulate_arrays
+from scripts.execute_production_like_walkforward import (
+    INPUTS, LOCKED, OUT, funding_tradability_mask, iter_breakout_models, iter_momentum_models, simulate_arrays,
+)
 
 
 def main() -> None:
@@ -42,6 +44,7 @@ def main() -> None:
     events = pd.read_parquet(INPUTS / "funding_events.parquet")
     events["funding_time"] = pd.to_datetime(events["funding_time"], utc=True)
     same, midnight = funding_coefficients(prices, events)
+    tradable = funding_tradability_mask(prices.index, symbols, events)
     commissions = pd.read_csv(INPUTS / "commission_rates.csv").set_index("symbol")
     maker = commissions["maker"].reindex(symbols).fillna(.0002)
     taker = commissions["taker"].reindex(symbols).fillna(.0004)
@@ -62,7 +65,7 @@ def main() -> None:
                 continue
             config = configs[configs.model.eq(model.name)].iloc[0]
             risk_window = int(config.volatility_window)
-            unit = fast_risk_unit(model.forecast, close_returns, volatility[risk_window], float(config.ticker_risk_cap), risk_window)
+            unit = fast_risk_unit(model.forecast, close_returns, volatility[risk_window], float(config.ticker_risk_cap), risk_window).where(tradable, 0.0)
             simulation = simulate_arrays(
                 unit.to_numpy(float), prices.index, open_returns.to_numpy(float), same.to_numpy(float), midnight.to_numpy(float),
                 maker.to_numpy(float), taker.to_numpy(float), target_vol=float(config.target_vol),

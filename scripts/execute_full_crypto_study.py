@@ -38,6 +38,16 @@ def funding_coefficients(prices: pd.DataFrame, events: pd.DataFrame):
     work["midnight"] = work["funding_time"].dt.hour.eq(0)
     work["reference_day"] = work["settlement_day"] - pd.to_timedelta(work["midnight"].astype(int), unit="D")
     work = work.merge(long_prices, on=["reference_day", "symbol"], how="left")
+    work = work[work.reference_price.notna()].copy()
+    first_covered = work[work.mark_price.notna()].groupby("symbol")["funding_time"].min()
+    missing_marks = work[work.mark_price.isna()].copy()
+    late_missing = missing_marks[
+        missing_marks.apply(lambda row: row.funding_time >= first_covered.get(row.symbol, pd.Timestamp.max.tz_localize("UTC")), axis=1)
+    ]
+    if not late_missing.empty:
+        examples = late_missing.head(5)[["symbol", "funding_time"]].astype(str).to_dict("records")
+        raise ValueError(f"Required post-eligibility funding mark prices are missing for {len(late_missing):,} events; examples={examples}")
+    work = work[work.mark_price.notna()].copy()
     work["coefficient"] = -work["mark_price"] / work["reference_price"] * work["funding_rate"]
     def pivot(mask):
         grouped = work.loc[mask].groupby(["settlement_day", "symbol"])["coefficient"].sum()

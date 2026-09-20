@@ -3,8 +3,11 @@ import pandas as pd
 import pytest
 
 from scripts.execute_complete_crypto_study import calibration_path
+from scripts.backfill_funding_mark_prices import parse_mark_klines
+from scripts.execute_full_crypto_study import funding_coefficients
 from scripts.execute_production_like_walkforward import (
     fold_definitions,
+    funding_tradability_mask,
     model_config_from_name,
     select_rosters,
     selection_window,
@@ -29,6 +32,35 @@ def test_model_names_round_trip_to_exact_configuration_fields(name, expected):
 def test_unsupported_or_320_day_model_name_is_rejected():
     with pytest.raises(ValueError):
         model_config_from_name("breakout_crypto_equal_quarterly_vol320")
+
+
+def test_mark_price_kline_parser_uses_open_at_exact_event_timestamp():
+    rows = [[1_700_000_000_000, "100.25", "101", "99", "100.5", "0", 0, "0", 0, "0", "0", "0"]]
+    parsed = parse_mark_klines(rows)
+    assert parsed.index[0] == pd.Timestamp(1_700_000_000_000, unit="ms", tz="UTC")
+    assert parsed.iloc[0] == 100.25
+
+
+def test_funding_tradability_starts_day_after_first_fully_priced_event():
+    index = pd.date_range("2024-01-01", periods=4, freq="D")
+    events = pd.DataFrame({
+        "symbol": ["AAAUSDT", "AAAUSDT"],
+        "funding_time": pd.to_datetime(["2024-01-01 08:00Z", "2024-01-02 08:00Z"]),
+        "funding_rate": [0.001, 0.001], "mark_price": [np.nan, 100.0],
+    })
+    mask = funding_tradability_mask(index, ["AAAUSDT"], events)
+    assert mask.AAAUSDT.tolist() == [False, False, True, True]
+
+
+def test_funding_coefficients_reject_missing_mark_after_eligibility():
+    prices = pd.DataFrame({"AAAUSDT": [100.0, 101.0, 102.0]}, index=pd.date_range("2024-01-01", periods=3, freq="D"))
+    events = pd.DataFrame({
+        "symbol": ["AAAUSDT", "AAAUSDT"],
+        "funding_time": pd.to_datetime(["2024-01-01 08:00Z", "2024-01-02 08:00Z"]),
+        "funding_rate": [0.001, 0.001], "mark_price": [100.0, np.nan],
+    })
+    with pytest.raises(ValueError, match="post-eligibility"):
+        funding_coefficients(prices, events)
 
 
 def test_locked_outer_folds_are_annual_and_causal():
