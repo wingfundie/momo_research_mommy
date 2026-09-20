@@ -90,6 +90,7 @@ def parameter_path(
     shrink: float = 1.0,
     weight_cap: float = 0.20,
     smoothing: int = 1,
+    history_days: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Causal scalar, weight and forecast-correlation paths."""
     t_count, _, rule_count = raw.shape
@@ -99,13 +100,14 @@ def parameter_path(
     fixed = np.asarray([FIXED_SCALARS[h] for h in HORIZONS], float)
     equal = np.ones(rule_count) / rule_count
     for location in refit_indices(index, schedule):
-        history = raw[:location]
+        start = 0 if history_days is None else int(index.searchsorted(index[location] - pd.Timedelta(days=history_days), side="left"))
+        history = raw[start:location]
         scalars = fixed if fixed_scalars else np.asarray(
             [10.0 / np.nanmedian(np.abs(history[:, :, rule])) for rule in range(rule_count)]
         )
         scaled = np.clip(history * scalars[None, None, :], -20, 20)
         if fit_weights:
-            pnl = scaled[:-2] / 10.0 * returns[2:location, :, None]
+            pnl = scaled[:-2] / 10.0 * returns[start + 2:location, :, None]
             mean = np.nanmean(pnl, axis=0)
             std = np.nanstd(pnl, axis=0, ddof=1)
             scores = np.nanmedian(

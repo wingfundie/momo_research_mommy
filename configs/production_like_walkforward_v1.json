@@ -106,6 +106,8 @@
     "outer_fold_metrics.parquet",
     "daily_portfolio_state.parquet",
     "stitched_oos_returns.parquet",
+    "all_tested_configurations.json",
+    "selected_deployable_configurations.json",
     "production_shadow.sqlite",
     "production_like_study.html"
   ]

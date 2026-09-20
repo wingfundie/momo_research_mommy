@@ -135,18 +135,20 @@ def capped_simplex(values: np.ndarray, cap: float) -> np.ndarray:
 
 
 def calibration_path(raw: np.ndarray, returns: np.ndarray, index: pd.DatetimeIndex, schedule: str,
-                     shrink: float, weight_cap: float, smoothing: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+                     shrink: float, weight_cap: float, smoothing: int,
+                     history_days: int | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     t_count, _, rule_count = raw.shape
     scalar_steps = np.full((t_count, rule_count), np.nan)
     weight_steps = np.full((t_count, rule_count), np.nan)
     dfm_steps = np.full(t_count, np.nan)
     for location in refit_indices(index, schedule):
-        history = raw[:location]
+        start = 0 if history_days is None else int(index.searchsorted(index[location] - pd.Timedelta(days=history_days), side="left"))
+        history = raw[start:location]
         scalars = np.array([10 / np.nanmedian(np.abs(history[:, :, r])) for r in range(rule_count)])
         scaled = np.clip(history * scalars, -20, 20)
         # Forecasts are known only after the daily close. Use the following full
         # close-to-close interval for pooled fitting, never the contemporaneous overnight.
-        pnl = scaled[:-2] / 10 * returns[2:location, :, None]
+        pnl = scaled[:-2] / 10 * returns[start + 2:location, :, None]
         mean = np.nanmean(pnl, axis=0); std = np.nanstd(pnl, axis=0, ddof=1)
         scores = np.nanmedian(np.maximum(np.divide(mean, std, out=np.zeros_like(mean), where=std > 0), 0), axis=0)
         raw_weights = scores / scores.sum() if scores.sum() > 0 else np.ones(rule_count) / rule_count

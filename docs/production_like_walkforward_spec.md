@@ -43,3 +43,15 @@ These are raw validation leaders selected from the existing completed studies, n
 ## Headline acceptance rule
 
 The historical headline is the concatenation of outer test folds only. No observation may be produced by a roster selected using that observation or later data. A full-history backcast of today's six seed models is diagnostic only and must remain separate from the causal walk-forward record.
+
+## Execution and rebuild
+
+```text
+python scripts/execute_production_like_walkforward.py
+python scripts/initialize_production_shadow.py
+python scripts/build_production_like_walkforward_report.py
+```
+
+Versioned results are written to `data_store/crypto_momentum_research/production_like_walkforward_v1/`. The comprehensive report is `reports/crypto_trend_production_like_walkforward_20260920.html`; the per-strategy holdings companion is `reports/crypto_trend_production_like_composition_20260920.html`.
+
+The directory also contains `all_tested_configurations.json`, with every unique exact configuration and its reproducible hash, and `selected_deployable_configurations.json`, with the three selected configurations per family and outer fold. Fold-level scores remain in `candidate_score_ledger.parquet`.
