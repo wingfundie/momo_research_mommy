@@ -26,6 +26,9 @@ from scripts.execute_full_crypto_study import funding_coefficients
 OUT = ROOT / "data_store/crypto_momentum_research/complete_results"
 INPUTS = ROOT / "data_store/crypto_momentum_research/inputs"
 RULES = ((2, 8), (4, 16), (8, 32), (16, 64), (32, 128))
+BREAKOUT_HORIZONS = (16, 32, 64, 128, 256)
+LEGACY_BREAKOUT_HORIZONS = (10, 20, 40, 80, 160)
+LEGACY_BREAKOUT_SCALARS = {10: .60, 20: .67, 40: .70, 80: .73, 160: .74}
 VOL_WINDOWS = (60, 90, 180, 360)
 REFITS = ("quarterly", "semiannual", "annual", "frozen")
 SPECS = {
@@ -93,6 +96,18 @@ def components(prices: pd.DataFrame, vol_window: int) -> np.ndarray:
         fast_ma = prices.ewm(span=fast, adjust=False, min_periods=fast).mean()
         slow_ma = prices.ewm(span=slow, adjust=False, min_periods=slow).mean()
         result.append(((fast_ma - slow_ma) / daily_price_vol.replace(0, np.nan)).to_numpy(float))
+    return np.stack(result, axis=2)
+
+
+def breakout_components(prices: pd.DataFrame, horizons: tuple[int, ...] = BREAKOUT_HORIZONS) -> np.ndarray:
+    """Build every causal breakout component independently for every ticker."""
+    result = []
+    for horizon in horizons:
+        high = prices.rolling(horizon, min_periods=horizon).max()
+        low = prices.rolling(horizon, min_periods=horizon).min()
+        midpoint = (high + low) / 2.0
+        spread = (high - low).replace(0.0, np.nan)
+        result.append((40.0 * (prices - midpoint) / spread).clip(-20, 20).to_numpy(float))
     return np.stack(result, axis=2)
 
 
@@ -326,14 +341,16 @@ def base_models(fit_prices: pd.DataFrame, portfolio_prices: pd.DataFrame,
     # Legacy per-ticker Optuna reference, with explicit equal fallback.
     legacy = pd.read_pickle(ROOT / "data_store/optimized_crypto_weights_carver.pkl")
     raw, scalars, _, _ = primary_components; scaled = np.clip(raw * scalars[:, None, :], -20, 20)
-    legacy_final = np.full(scaled.shape[:2], np.nan); fallback = 0
+    legacy_final = np.full(scaled.shape[:2], np.nan); fallback = 0; valid_optuna = 0
     for j, symbol in enumerate(portfolio_prices):
         payload = legacy.get(symbol, {}); w = np.asarray(payload.get("weights", []), float)
         if len(w) != len(RULES) or not np.isfinite(w).all() or w.sum() <= 0: w = np.ones(len(RULES)) / len(RULES); fallback += 1
-        else: w = w / w.sum()
+        else: w = w / w.sum(); valid_optuna += 1
         valid = np.isfinite(scaled[:, j]); legacy_final[:, j] = np.where(valid.any(axis=1), np.nansum(scaled[:, j] * w, axis=1), np.nan)
     models["ts_legacy_optuna"] = (pd.DataFrame(np.clip(legacy_final, -20, 20), index=fit_prices.index, columns=portfolio_prices.columns) / 20,
-                                  {"family": "time_series", "rule_weights": "legacy_per_ticker_optuna", "fallback_equal_tickers": fallback, "volatility_window": 90})
+                                  {"family": "time_series", "rule_weights": "legacy_per_ticker_optuna",
+                                   "fallback_equal_tickers": fallback, "valid_optuna_tickers": valid_optuna,
+                                   "optimization_scope": "legacy_static_full_sample_reference", "volatility_window": 90})
     asset_returns = portfolio_prices.pct_change(fill_method=None); betas = rolling_betas(asset_returns, lookback=90)
     raw_primary, scalars, _, _ = primary_components
     scaled_primary = np.clip(raw_primary * scalars[:, None, :], -20, 20)
@@ -363,12 +380,106 @@ def base_models(fit_prices: pd.DataFrame, portfolio_prices: pd.DataFrame,
             models[name] = (frame, {"family": "cross_sectional", "construction": name,
                                          "ic_horizons": list(horizons), "rank_buffer": .05 if "buffer5" in name else .10 if "buffer10" in name else 0,
                                          "volatility_window": 90})
-    breakouts = {}
-    for horizon in (16, 32, 64, 128, 256):
-        frame = pd.DataFrame({c: breakout_forecast(portfolio_prices[c], horizon) for c in portfolio_prices}) / 20
-        models[f"breakout_{horizon}"] = (frame, {"family": "breakout", "horizon": horizon, "volatility_window": 90})
-        breakouts[horizon] = frame
-    models["breakout_equal"] = (sum(breakouts.values()) / len(breakouts), {"family": "breakout", "horizons": list(breakouts), "weights": "equal", "volatility_window": 90})
+    # Breakout receives the same pooled/equal/refit/volatility model grid as EWMAC.
+    # Components are calculated across the full survivor-aware fit panel, then the
+    # resulting causal parameter paths are projected onto the portfolio universe.
+    breakout_raw = breakout_components(fit_prices)
+    breakout_paths = {}
+    primary_breakout_components = None
+    for schedule in REFITS:
+        for spec_name, (shrink, cap, smoothing) in SPECS.items():
+            breakout_paths[(schedule, spec_name)] = calibration_path(
+                breakout_raw, fit_returns, fit_prices.index, schedule, shrink, cap, smoothing
+            )
+    breakout_equal_scalars, _, breakout_equal_dfm = calibration_path(
+        breakout_raw, fit_returns, fit_prices.index, "quarterly", 1., .20, 1
+    )
+    equal_breakout_weights = np.ones((len(fit_prices), len(BREAKOUT_HORIZONS))) / len(BREAKOUT_HORIZONS)
+    for vol_window in VOL_WINDOWS:
+        for schedule in REFITS:
+            for spec_name in SPECS:
+                scalars, weights, dfm = breakout_paths[(schedule, spec_name)]
+                final = combine(breakout_raw[:, portfolio_locations], scalars, weights, dfm)
+                name = f"breakout_{spec_name}_{schedule}_vol{vol_window}"
+                models[name] = (
+                    pd.DataFrame(final, index=fit_prices.index, columns=portfolio_prices.columns) / 20,
+                    {"family": "breakout", "horizon_weights": spec_name, "refit": schedule,
+                     "horizons": list(BREAKOUT_HORIZONS), "volatility_window": vol_window},
+                )
+                if vol_window == 90 and schedule == "quarterly" and spec_name == "shrink_80_primary":
+                    primary_breakout_components = (breakout_raw[:, portfolio_locations], scalars, weights, dfm)
+        equal_final = combine(
+            breakout_raw[:, portfolio_locations], breakout_equal_scalars,
+            equal_breakout_weights, breakout_equal_dfm,
+        )
+        models[f"breakout_equal_vol{vol_window}"] = (
+            pd.DataFrame(equal_final, index=fit_prices.index, columns=portfolio_prices.columns) / 20,
+            {"family": "breakout", "horizon_weights": "equal", "refit": "quarterly_scalars",
+             "horizons": list(BREAKOUT_HORIZONS), "volatility_window": vol_window},
+        )
+
+    # Keep each individual horizon as a transparent signal-construction control.
+    for rule_number, horizon in enumerate(BREAKOUT_HORIZONS):
+        frame = pd.DataFrame(
+            breakout_raw[:, portfolio_locations, rule_number],
+            index=fit_prices.index, columns=portfolio_prices.columns,
+        ) / 20
+        models[f"breakout_horizon_{horizon}"] = (
+            frame, {"family": "breakout", "horizon": horizon,
+                    "horizon_weights": "single_horizon", "volatility_window": 90},
+        )
+
+    # Legacy per-ticker Optuna is reconstructed on the exact horizons and fixed
+    # scalars used by its saved optimization. Missing/invalid tickers are explicit
+    # equal-weight fallbacks and are never described as successfully optimized.
+    legacy_breakout = pd.read_pickle(ROOT / "data_store/optimized_breakout_params.pkl")
+    legacy_raw = breakout_components(portfolio_prices, LEGACY_BREAKOUT_HORIZONS)
+    legacy_scaled = np.clip(
+        legacy_raw * np.asarray([LEGACY_BREAKOUT_SCALARS[h] for h in LEGACY_BREAKOUT_HORIZONS])[None, None, :],
+        -20, 20,
+    )
+    legacy_breakout_final = np.full(legacy_scaled.shape[:2], np.nan)
+    breakout_fallback = 0
+    breakout_valid_optuna = 0
+    for j, symbol in enumerate(portfolio_prices):
+        payload = legacy_breakout.get(symbol, {})
+        w = np.asarray(payload.get("weights", []), float)
+        horizons = tuple(payload.get("horizons", LEGACY_BREAKOUT_HORIZONS))
+        valid_optuna = (
+            payload.get("status", "success") == "success"
+            and horizons == LEGACY_BREAKOUT_HORIZONS
+            and len(w) == len(LEGACY_BREAKOUT_HORIZONS)
+            and np.isfinite(w).all() and w.sum() > 0
+        )
+        if valid_optuna:
+            w = w / w.sum(); breakout_valid_optuna += 1
+        else:
+            w = np.ones(len(LEGACY_BREAKOUT_HORIZONS)) / len(LEGACY_BREAKOUT_HORIZONS)
+            breakout_fallback += 1
+        valid = np.isfinite(legacy_scaled[:, j])
+        legacy_breakout_final[:, j] = np.where(
+            valid.any(axis=1), np.nansum(legacy_scaled[:, j] * w, axis=1), np.nan
+        )
+    models["breakout_legacy_optuna"] = (
+        pd.DataFrame(np.clip(legacy_breakout_final, -20, 20), index=fit_prices.index,
+                     columns=portfolio_prices.columns) / 20,
+        {"family": "breakout", "horizon_weights": "legacy_per_ticker_optuna",
+         "horizons": list(LEGACY_BREAKOUT_HORIZONS), "fallback_equal_tickers": breakout_fallback,
+         "valid_optuna_tickers": breakout_valid_optuna, "optimization_scope": "legacy_static_full_sample_reference",
+         "volatility_window": 90},
+    )
+
+    raw_breakout_primary, scalars_breakout_primary, _, _ = primary_breakout_components
+    breakout_scaled_primary = np.clip(raw_breakout_primary * scalars_breakout_primary[:, None, :], -20, 20)
+    breakout_component_columns = pd.MultiIndex.from_product(
+        [[f"breakout_{h}" for h in BREAKOUT_HORIZONS], portfolio_prices.columns],
+        names=["rule", "symbol"],
+    )
+    breakout_component_matrix = np.concatenate(
+        [breakout_scaled_primary[:, :, rule] for rule in range(len(BREAKOUT_HORIZONS))], axis=1
+    )
+    pd.DataFrame(breakout_component_matrix, index=fit_prices.index,
+                 columns=breakout_component_columns).to_parquet(OUT / "primary_breakout_component_forecasts.parquet")
     ts_primary = models["ts_shrink_80_primary_quarterly_vol90"][0]
     xs_primary = models["xs_ic5_20_primary_dollar_neutral"][0]
     models["diagnostic_ts_xs_equal_risk"] = ((signed_normalized(ts_primary) + signed_normalized(xs_primary)) / 2,
@@ -414,7 +525,8 @@ def main():
     rows = []; daily_store = {}; funding_store = {}; latest_store = {}; attribution_store = {}
     attribution_models = {
         "ts_equal_vol90", "ts_shrink_80_primary_quarterly_vol90", "ts_legacy_optuna",
-        "xs_ic5_20_primary_dollar_neutral", "xs_ic5_20_basket20_buffer5", "breakout_equal",
+        "xs_ic5_20_primary_dollar_neutral", "xs_ic5_20_basket20_buffer5",
+        "breakout_equal_vol90", "breakout_shrink_80_primary_quarterly_vol90", "breakout_legacy_optuna",
         "diagnostic_ts_xs_equal_risk",
     }
     input_hashes = {"fit_prices": digest_frame(fit_prices), "portfolio_prices": digest_frame(portfolio_prices),
@@ -608,7 +720,8 @@ def main():
                       and row["metrics"]["validation"]["net_sharpe"] is not None
                       and row["config"].get("taker_share", 1.) == 1.
                       and row["config"].get("slippage_bps", 5.) == 5.
-                      and row["config"].get("activation", "next_open") == "next_open"]
+                      and row["config"].get("activation", "next_open") == "next_open"
+                      and not str(row["config"].get("optimization_scope", "")).startswith("legacy_static")]
         if candidates:
             selected_configs.append(max(candidates, key=lambda row: row["metrics"]["validation"]["net_sharpe"]))
     generated_at = pd.Timestamp.now(tz="UTC").isoformat()
@@ -654,6 +767,13 @@ def main():
         ledger_groups.to_sql("group_attribution", connection, if_exists="append", index=False)
         if actual_path.exists():
             ledger_actual = actual.copy(); ledger_actual.insert(0, "run_id", run_id)
+            existing_actual_columns = [
+                row[1] for row in connection.execute("PRAGMA table_info(actual_funding)").fetchall()
+            ]
+            if existing_actual_columns:
+                ledger_actual = ledger_actual[
+                    [column for column in existing_actual_columns if column in ledger_actual.columns]
+                ]
             ledger_actual.to_sql("actual_funding", connection, if_exists="append", index=False)
     print(json.dumps(manifest, indent=2), flush=True)
 

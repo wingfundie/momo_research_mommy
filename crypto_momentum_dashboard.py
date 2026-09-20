@@ -73,7 +73,8 @@ else:
                                     "holdout_sharpe": row["metrics"]["holdout_2026"]["net_sharpe"],
                                     "holdout_return": row["metrics"]["holdout_2026"]["annual_return"]} for row in selected])
     equity_models = [c for c in ["ts_equal_vol90", "ts_shrink_80_primary_quarterly_vol90", "xs_ic5_20_primary_dollar_neutral",
-                                 "breakout_32", "baseline_btc_buy_hold", "baseline_equal_basket"] if c in data["returns"]]
+                                 "breakout_shrink_80_primary_quarterly_vol90", "breakout_equal_vol90",
+                                 "breakout_legacy_optuna", "baseline_btc_buy_hold", "baseline_equal_basket"] if c in data["returns"]]
     equity = (1 + data["returns"].loc[data["returns"].index >= "2024-01-01", equity_models].fillna(0)).cumprod()
     equity_long = equity.rename_axis("date").reset_index().melt("date", var_name="model", value_name="growth")
     equity_fig = style_figure(px.line(equity_long, x="date", y="growth", color="model"), "Common-risk portfolio growth")

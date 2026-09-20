@@ -25,6 +25,10 @@ def main():
             config["fit_universe_assets"] = FIT_ASSETS
         if "portfolio_assets" in config:
             config["portfolio_assets"] = PORTFOLIO_ASSETS
+        if config.get("model") in {"ts_legacy_optuna", "breakout_legacy_optuna"}:
+            config["valid_optuna_tickers"] = 64
+            config["fallback_equal_tickers"] = 33
+            config["optimization_scope"] = "legacy_static_full_sample_reference"
         row["config_id"] = config_id(config)
     rows = list({row["config_id"]: row for row in rows}.values())
     families = sorted({row["config"].get("family") for row in rows})
@@ -34,16 +38,22 @@ def main():
                       and row["metrics"]["validation"]["net_sharpe"] is not None
                       and row["config"].get("taker_share", 1.) == 1.
                       and row["config"].get("slippage_bps", 5.) == 5.
-                      and row["config"].get("activation", "next_open") == "next_open"]
+                      and row["config"].get("activation", "next_open") == "next_open"
+                      and not str(row["config"].get("optimization_scope", "")).startswith("legacy_static")]
         if candidates:
             selected.append(max(candidates, key=lambda row: row["metrics"]["validation"]["net_sharpe"]))
     manifest = json.loads((OUT / "study_manifest.json").read_text(encoding="utf-8"))
     manifest["fit_universe_assets"] = FIT_ASSETS
     manifest["portfolio_assets"] = PORTFOLIO_ASSETS
     manifest["configuration_count"] = len(rows)
-    manifest["metadata_correction"] = "asset counts corrected from row count to column count; performance arrays unchanged"
+    manifest["metadata_correction"] = (
+        "asset counts use column counts; legacy Optuna coverage explicitly records 64 valid and 33 equal fallbacks; "
+        "performance arrays unchanged"
+    )
     (OUT / "tested_configurations.json").write_text(json.dumps(rows, separators=(",", ":"), allow_nan=False), encoding="utf-8")
     (OUT / "selected_configurations.json").write_text(json.dumps(selected, indent=2, allow_nan=False), encoding="utf-8")
+    deployable = {row["config"]["family"]: {"config_id": row["config_id"], **row["config"]} for row in selected}
+    (OUT / "deployable_configurations.json").write_text(json.dumps(deployable, indent=2, allow_nan=False), encoding="utf-8")
     (OUT / "study_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     flat = []
     for row in rows:

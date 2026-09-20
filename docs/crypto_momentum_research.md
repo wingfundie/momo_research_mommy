@@ -9,6 +9,8 @@ This pipeline is a shadow research system. It does not alter the existing produc
 - Historical point-in-time FDV membership is used only when supplied. The current run is explicitly labelled as a current-universe historical fallback.
 - Headline next-open P&L uses forward Binance open-to-open returns. Next-close uses forward close-to-close returns as a sensitivity.
 - Historical public funding is settled event by event. Actual account `FUNDING_FEE` records are archived separately and reconciled without assuming all account exposure belongs to the model.
+- Breakout has signal-model parity with EWMAC: pooled/shrunk/equal horizon weights, quarterly through frozen refits, four volatility windows, individual-horizon controls and a legacy per-ticker Optuna reference.
+- Legacy Optuna coverage is 64 valid tickers and 33 explicit equal-weight fallbacks for both EWMAC and breakout. These static full-sample references are excluded from causal headline selection.
 
 ## Rebuild order
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from scripts.execute_complete_crypto_study import evaluate, held_weights
+from scripts.execute_complete_crypto_study import BREAKOUT_HORIZONS, breakout_components, evaluate, held_weights
 
 
 def test_next_open_activates_on_following_candle():
@@ -40,3 +40,14 @@ def test_next_close_defers_funding_position_one_day():
                                  same, zero, mask, rates, rates)
     assert funding.iloc[1] == 0
     assert np.isclose(funding.iloc[2], -0.02)
+
+
+def test_breakout_components_cover_every_ticker_and_preserve_warmup():
+    index = pd.date_range("2024-01-01", periods=300, freq="D")
+    prices = pd.DataFrame({"AAAUSDT": np.arange(1, 301), "BBBUSDT": np.arange(301, 601)}, index=index)
+    result = breakout_components(prices)
+    assert result.shape == (300, 2, len(BREAKOUT_HORIZONS))
+    for rule, horizon in enumerate(BREAKOUT_HORIZONS):
+        assert np.isnan(result[: horizon - 1, :, rule]).all()
+        assert np.isfinite(result[horizon - 1 :, :, rule]).all()
+        assert np.nanmax(np.abs(result[:, :, rule])) <= 20
