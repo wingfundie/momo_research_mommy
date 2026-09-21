@@ -31,6 +31,12 @@ You can override paths via env vars in `.env`.
 python3 mom_break_bot.py
 ```
 
+### Shadow crypto momentum research
+
+The causal portfolio research pipeline is isolated from production. It supports time-series and
+cross-sectional momentum, event-level funding, point-in-time universe snapshots, deterministic
+manifests and a dedicated dashboard. See [docs/crypto_momentum_research.md](docs/crypto_momentum_research.md).
+
 ### Tests
 
 ```bash

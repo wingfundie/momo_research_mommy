@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "decision_status": "locked_from_lavish_feedback",
+  "locked_at": "2026-09-20",
+  "study_name": "crypto_momentum_breakout_production_like_walkforward",
+  "methodology_variants": [
+    {
+      "id": "nested_expanding",
+      "training_history": "all_available_history_before_cutoff",
+      "outer_roster_frequency": "annual",
+      "internal_refits": "preserve_each_model_schedule"
+    },
+    {
+      "id": "nested_rolling_730d",
+      "training_history_days": 730,
+      "training_window_choice": "implementation_default_to_support_the_2022_outer_fold",
+      "minimum_training_days": 365,
+      "outer_roster_frequency": "annual",
+      "internal_refits": "preserve_each_model_schedule"
+    }
+  ],
+  "outer_test_folds": [
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026_ytd"
+  ],
+  "rolling_metric_windows_days": [
+    90,
+    365
+  ],
+  "selection": {
+    "family_slots": {
+      "time_series_momentum": 3,
+      "breakout": 3
+    },
+    "score": "prior_only_net_sharpe",
+    "tie_breaks": [
+      "lower_annual_turnover",
+      "lower_gross_cap",
+      "lower_target_volatility",
+      "lexicographic_config_id"
+    ],
+    "historical_rule": "select_at_each_outer_fold_cutoff_without_future_data",
+    "holdout_metrics_participate": false
+  },
+  "prospective_seed_roster": {
+    "source": "existing_completed_study_results",
+    "activation": "shadow_only",
+    "source_hashes_sha256": {
+      "momentum_tested_configurations_parquet": "c0b9dff5ff1340877370fc0ac27ca5c34cfab5d2515025cf470f97e20174b17b",
+      "breakout_tested_configurations_parquet": "d173f66ddd41f690063b37e0474926121bd03de3cc5850d8cf7039602b8c0b03"
+    },
+    "time_series_momentum": [
+      {
+        "config_id": "82f7747eb0444a6af97f",
+        "model": "ts_equal_vol60",
+        "validation_net_sharpe": 0.4226162983286377,
+        "source": "data_store/crypto_momentum_research/complete_results/tested_configurations.parquet"
+      },
+      {
+        "config_id": "9ec0476face086163247",
+        "model": "ts_shrink_75_semiannual_vol60",
+        "validation_net_sharpe": 0.42174214161015083,
+        "source": "data_store/crypto_momentum_research/complete_results/tested_configurations.parquet"
+      },
+      {
+        "config_id": "207ba4a7e9eaed7159d9",
+        "model": "ts_shrink_90_semiannual_vol60",
+        "validation_net_sharpe": 0.42151153298355826,
+        "source": "data_store/crypto_momentum_research/complete_results/tested_configurations.parquet"
+      }
+    ],
+    "breakout": [
+      {
+        "config_id": "17dc3b5200249930172d",
+        "model": "breakout_crypto_equal_frozen_vol60",
+        "validation_net_sharpe": 0.6581320794123332,
+        "source": "data_store/crypto_momentum_research/complete_results_carver5_v2/tested_configurations.parquet"
+      },
+      {
+        "config_id": "28a6f4703071d8cd7b6d",
+        "model": "breakout_crypto_shrink_75_frozen_vol60",
+        "validation_net_sharpe": 0.658132079412099,
+        "source": "data_store/crypto_momentum_research/complete_results_carver5_v2/tested_configurations.parquet"
+      },
+      {
+        "config_id": "01d51dec9a9d2826e1d0",
+        "model": "breakout_crypto_shrink_90_frozen_vol60",
+        "validation_net_sharpe": 0.6581320791614957,
+        "source": "data_store/crypto_momentum_research/complete_results_carver5_v2/tested_configurations.parquet"
+      }
+    ],
+    "breakout_similarity_warning": "The three raw validation winners are near-identical frozen vol60 variants and must not be presented as independent diversification."
+  },
+  "portfolio_construction": {
+    "within_family": "equal_risk_one_third_per_model",
+    "combined_families": "50_percent_momentum_50_percent_breakout_risk",
+    "execution": "next_open",
+    "funding": "event_level_historical",
+    "unused_risk": "cash"
+  },
+  "required_outputs": [
+    "rolling_selection_ledger.parquet",
+    "outer_fold_metrics.parquet",
+    "daily_portfolio_state.parquet",
+    "stitched_oos_returns.parquet",
+    "all_tested_configurations.json",
+    "selected_deployable_configurations.json",
+    "production_shadow.sqlite",
+    "production_like_study.html"
+  ]
+}
