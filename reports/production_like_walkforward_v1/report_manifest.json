@@ -1,0 +1,19 @@
+{
+  "reports": [
+    "crypto_trend_production_like_walkforward_20260920.html",
+    "crypto_trend_production_like_composition_20260920.html"
+  ],
+  "generator": "scripts/build_production_like_walkforward_report.py",
+  "rebuild": "python scripts/build_production_like_walkforward_report.py",
+  "inputs": {
+    "study_manifest.json": "b5631c0c892d3453983c6b0b1db9516c325515ff283be4ececfb660e7cbf340c",
+    "rolling_selection_ledger.parquet": "d2834e06d0e7a733767a979f56ae9dddadbc350966892042243775ac6c0a8d96",
+    "outer_fold_metrics.parquet": "6fa2ae257fec2d594ba54de431368a08afd21bf532eddbbb4e62ae74dd75cded",
+    "stitched_oos_metrics.parquet": "28c79f1ca4ceeed270d2c305556aa1df8e4649b77b757b6ec607de048e429bc9",
+    "daily_portfolio_state.parquet": "4a85c174c80336ec68bb3a579175ec1ba823c7e00d4262377ada2dd28f46bb74",
+    "rolling_metrics.parquet": "a64d04e618d9671cd94d9a6d66b8f25c94910773d8a5755daf93340277dd6529",
+    "daily_ticker_positions.parquet": "23186ba95a513948e826e43374c6a04a4834e1854ed0a26ade4c4b13ae76c447",
+    "all_tested_configurations.json": "a97e59fcb958c6316cc850018f113165af7590613cbd077cf9e5837228b81cc6",
+    "selected_deployable_configurations.json": "64a68ae751b2e0ea7c79f3e62b944731ec961144deff51a61c1e67a4bbf63118"
+  }
+}

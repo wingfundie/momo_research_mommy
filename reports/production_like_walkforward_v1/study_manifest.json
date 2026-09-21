@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "methodology_version": "crypto-trend-production-like-walkforward-v1",
+  "generated_at": "2026-09-20T14:05:14.499415+00:00",
+  "locked_config": "configs\\production_like_walkforward_v1.json",
+  "locked_config_sha256": "abc066d369752f674892d54b7acf360ceddecba61b9d3f4dcede63c2bedcb837",
+  "input_hashes": {
+    "fit_prices": "5317ab5d3323b89537390770a6810cd86f2b9ce2d946b636c982108b46ee3721",
+    "portfolio_prices": "4614b53af6da7a04d1bb4000d15e2ed4369360a71fd4d155d12faf315512e9cf",
+    "open_prices": "73f582def350fa89c3a6ba86d4795420a71803caee1d7670bae67917b1bed08d",
+    "funding": "6e105284abd68fb419f96ad30ee32e801af29327bf2641687fd7bb99172f920f"
+  },
+  "variants": [
+    {
+      "id": "nested_expanding",
+      "history_days": null
+    },
+    {
+      "id": "nested_rolling_730d",
+      "history_days": 730
+    }
+  ],
+  "outer_folds": [
+    {
+      "fold": "2022",
+      "cutoff": "2021-12-31T00:00:00",
+      "test_start": "2022-01-01T00:00:00",
+      "test_end": "2022-12-31T00:00:00"
+    },
+    {
+      "fold": "2023",
+      "cutoff": "2022-12-31T00:00:00",
+      "test_start": "2023-01-01T00:00:00",
+      "test_end": "2023-12-31T00:00:00"
+    },
+    {
+      "fold": "2024",
+      "cutoff": "2023-12-31T00:00:00",
+      "test_start": "2024-01-01T00:00:00",
+      "test_end": "2024-12-31T00:00:00"
+    },
+    {
+      "fold": "2025",
+      "cutoff": "2024-12-31T00:00:00",
+      "test_start": "2025-01-01T00:00:00",
+      "test_end": "2025-12-31T00:00:00"
+    },
+    {
+      "fold": "2026_ytd",
+      "cutoff": "2025-12-31T00:00:00",
+      "test_start": "2026-01-01T00:00:00",
+      "test_end": "2026-09-18T00:00:00"
+    }
+  ],
+  "rolling_metric_windows_days": [
+    90,
+    365
+  ],
+  "fit_assets": 581,
+  "portfolio_assets": 97,
+  "candidate_fold_scores": 892800,
+  "tested_configuration_count": 178560,
+  "selected_outer_fold_configurations": 60,
+  "selection_uses_holdout_metrics": false,
+  "headline_costs": {
+    "taker_share": 1.0,
+    "slippage_bps": 5.0
+  },
+  "current_universe_historical_fallback": true,
+  "prospective_shadow_initialized": true,
+  "tradability": "day_after_first_fully_priced_funding_event",
+  "funding_coverage": {
+    "events": 433572,
+    "finite_mark_prices": 433171,
+    "unresolved_pre_eligibility": 401,
+    "unresolved_post_eligibility": 0,
+    "mark_price_sources": {
+      "binance_funding_history": 316179,
+      "binance_mark_price_kline_8h_open": 116992,
+      "unspecified": 401
+    }
+  },
+  "prospective_observations": 1,
+  "production_signals_changed": false,
+  "latest_shadow_data_cutoff": "2026-09-18T00:00:00",
+  "latest_shadow_emitted_at": "2026-09-20T14:08:01.031560+00:00"
+}
