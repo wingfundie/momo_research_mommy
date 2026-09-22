@@ -229,13 +229,17 @@ async def signals_command(
         longs = rows[rows["_trend"].eq("LONG")].sort_values("_sr", ascending=False).head(count)
         shorts = rows[rows["_trend"].eq("SHORT")].sort_values("_sr", ascending=False).head(count)
         title = f"Standalone trend Sharpe · {period}"
+        long_label = "POSITIVE TREND"
+        short_label = "NEGATIVE TREND"
     else:
         longs = rows[rows["_xsec"].gt(0)].sort_values("_rank", ascending=False).head(count)
         shorts = rows[rows["_xsec"].lt(0)].sort_values("_rank", ascending=True).head(count)
         title = f"XSec20 relative strength · SR {period}"
+        long_label = "PORTFOLIO LONG"
+        short_label = "PORTFOLIO SHORT"
     visible = ["Coin", "Trend", "XSec", "Fcast", "Rank", "Target", "SR"]
-    await _reply_frame(update, longs[visible], f"{title} — LONG")
-    await _reply_frame(update, shorts[visible], f"{title} — SHORT")
+    await _reply_frame(update, longs[visible], f"{title} — {long_label}")
+    await _reply_frame(update, shorts[visible], f"{title} — {short_label}")
 
 
 async def model_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -306,14 +310,15 @@ def _portfolio_side_lines(active: pd.DataFrame, side: str) -> list[str]:
         side_frame["target_weight"].abs().sort_values(ascending=False).index
     )
     notional = float(side_frame["target_notional"].sum())
-    lines = [f"{side}S {len(side_frame)} · {notional / 1_000:+.2f}k", "Coin   Str     SR     $k Qty"]
+    lines = [f"{side}S {len(side_frame)} · {notional / 1_000:+.2f}k", "Coin Str   R%    SR    $k Qty"]
     for row in side_frame.itertuples(index=False):
         coin = str(row.symbol).removesuffix("USDT")
         strength = "n/a" if not np.isfinite(row.absolute_forecast) else f"{row.absolute_forecast:+.2f}"
+        rank = "n/a" if not np.isfinite(row.rank) else f"{row.rank * 100:.0f}"
         sharpe = "n/a" if not np.isfinite(row.standalone_sr) else f"{row.standalone_sr:+.2f}"
         allocation = f"{row.target_notional / 1_000:+.2f}"
         quantity = "n/a" if not np.isfinite(row.quantity) else f"{row.quantity:.6g}"
-        lines.append(f"{coin:<6} {strength:>6} {sharpe:>6} {allocation:>6} {quantity}")
+        lines.append(f"{coin:<4} {strength:>6} {rank:>3} {sharpe:>6} {allocation:>6} {quantity}")
     return lines
 
 
@@ -333,7 +338,7 @@ def _portfolio_message(
         "<b>XSec20 · $100k target portfolio</b>\n"
         f"{stale_line}Held L {state.long_exposure:.1%} · S {state.short_exposure:.1%} · "
         f"G {state.gross_exposure:.1%} · N {state.net_exposure:+.1%}\n"
-        "Str: ticker strength −20…+20 · SR: standalone Sharpe · $k: notional/weight %\n"
+        "Str −20…+20 · R% universe rank · SR standalone Sharpe · $k notional/weight\n"
         f"<pre>{html.escape(body)}</pre>"
     )
     if len(message) > 4096:
