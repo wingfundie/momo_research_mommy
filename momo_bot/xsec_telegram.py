@@ -310,15 +310,29 @@ def _portfolio_side_lines(active: pd.DataFrame, side: str) -> list[str]:
         side_frame["target_weight"].abs().sort_values(ascending=False).index
     )
     notional = float(side_frame["target_notional"].sum())
-    lines = [f"{side}S {len(side_frame)} · {notional / 1_000:+.2f}k", "Coin Str   R%    SR    $k Qty"]
+    lines = [
+        f"{side}S {len(side_frame)} | ${abs(notional) / 1_000:.2f}k",
+        "Coin      $k    Qty |   Str  Rk   SR",
+    ]
+
+    def compact_quantity(value: float) -> str:
+        value = abs(value)
+        if value >= 1_000:
+            return f"{value:.0f}"
+        if value >= 100:
+            return f"{value:.1f}".rstrip("0").rstrip(".")
+        if value >= 1:
+            return f"{value:.3f}".rstrip("0").rstrip(".")
+        return f"{value:.4f}".rstrip("0").rstrip(".")
+
     for row in side_frame.itertuples(index=False):
         coin = str(row.symbol).removesuffix("USDT")
-        strength = "n/a" if not np.isfinite(row.absolute_forecast) else f"{row.absolute_forecast:+.2f}"
+        strength = "n/a" if not np.isfinite(row.absolute_forecast) else f"{row.absolute_forecast:+.1f}"
         rank = "n/a" if not np.isfinite(row.rank) else f"{row.rank * 100:.0f}"
-        sharpe = "n/a" if not np.isfinite(row.standalone_sr) else f"{row.standalone_sr:+.2f}"
-        allocation = f"{row.target_notional / 1_000:+.2f}"
-        quantity = "n/a" if not np.isfinite(row.quantity) else f"{row.quantity:.6g}"
-        lines.append(f"{coin:<4} {strength:>6} {rank:>3} {sharpe:>6} {allocation:>6} {quantity}")
+        sharpe = "n/a" if not np.isfinite(row.standalone_sr) else f"{row.standalone_sr:+.1f}"
+        allocation = f"{abs(row.target_notional) / 1_000:.2f}"
+        quantity = "n/a" if not np.isfinite(row.quantity) else compact_quantity(row.quantity)
+        lines.append(f"{coin:<6} {allocation:>5} {quantity:>6} | {strength:>5} {rank:>3} {sharpe:>4}")
     return lines
 
 
@@ -335,10 +349,11 @@ def _portfolio_message(
     )
     stale_line = "⚠️ Latest stored snapshot · " if stale else ""
     message = (
-        "<b>XSec20 · $100k target portfolio</b>\n"
-        f"{stale_line}Held L {state.long_exposure:.1%} · S {state.short_exposure:.1%} · "
+        "<b>XSec20 · $100k target</b>\n"
+        f"{stale_line}Held L {state.long_exposure:.1%} · S {abs(state.short_exposure):.1%} · "
         f"G {state.gross_exposure:.1%} · N {state.net_exposure:+.1%}\n"
-        "Str −20…+20 · R% universe rank · SR standalone Sharpe · $k notional/weight\n"
+        "$k and Qty are absolute sizes within each side\n"
+        "Str −20…20 · Rk percentile · SR standalone Sharpe\n"
         f"<pre>{html.escape(body)}</pre>"
     )
     if len(message) > 4096:

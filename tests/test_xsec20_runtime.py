@@ -100,12 +100,12 @@ def test_portfolio_output_is_one_message_with_ticker_strength_and_sharpe() -> No
     message = _portfolio_message(active, state)
 
     assert message.count("<pre>") == 1
-    assert "LONGS 2 · +6.00k" in message
-    assert "SHORTS 1 · -3.00k" in message
-    assert "SOL  +17.80  95  +1.80  +4.00 30" in message
-    assert "PAXG  +0.62   5  +0.40  -3.00 -0.7" in message
-    assert "Str −20…+20" in message
-    assert "R% universe rank" in message
+    assert "LONGS 2 | $6.00k" in message
+    assert "SHORTS 1 | $3.00k" in message
+    assert "SOL     4.00     30 | +17.8  95 +1.8" in message
+    assert "PAXG    3.00    0.7 |  +0.6   5 +0.4" in message
+    assert "Str −20…20" in message
+    assert "Rk percentile" in message
     assert len(message) <= 4096
 
 
