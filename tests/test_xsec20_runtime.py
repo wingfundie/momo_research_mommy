@@ -81,6 +81,7 @@ def test_portfolio_output_is_one_message_with_ticker_strength_and_sharpe() -> No
             "symbol": ["BTCUSDT", "SOLUSDT", "PAXGUSDT"],
             "xsec_side": ["LONG", "LONG", "SHORT"],
             "absolute_forecast": [15.25, 17.80, 0.62],
+            "rank": [0.80, 0.95, 0.05],
             "standalone_sr": [1.25, 1.80, 0.40],
             "target_weight": [0.02, 0.04, -0.03],
             "target_notional": [2_000.0, 4_000.0, -3_000.0],
@@ -101,9 +102,10 @@ def test_portfolio_output_is_one_message_with_ticker_strength_and_sharpe() -> No
     assert message.count("<pre>") == 1
     assert "LONGS 2 · +6.00k" in message
     assert "SHORTS 1 · -3.00k" in message
-    assert "SOL    +17.80  +1.80  +4.00 30" in message
-    assert "PAXG    +0.62  +0.40  -3.00 -0.7" in message
-    assert "ticker strength −20…+20" in message
+    assert "SOL  +17.80  95  +1.80  +4.00 30" in message
+    assert "PAXG  +0.62   5  +0.40  -3.00 -0.7" in message
+    assert "Str −20…+20" in message
+    assert "R% universe rank" in message
     assert len(message) <= 4096
 
 
