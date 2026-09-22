@@ -5,9 +5,16 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from datetime import timedelta, timezone
-from telegram import Update
+from telegram import BotCommand, Update
 from telegram.constants import ParseMode
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Application
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 from telegram.ext import CallbackContext
 from telegram.request import HTTPXRequest
 import asyncio 
@@ -46,6 +53,7 @@ from momo_bot.binance_stream import stream_closed_klines
 from momo_bot.candles import check_freshness
 from momo_bot.data_store import MarketDataStore
 from momo_bot.data_validation import infer_frequency
+from momo_bot import xsec_telegram
 
 for _stream in (sys.stdout, sys.stderr):
     try:
@@ -1050,6 +1058,9 @@ def _get_breakout_df(
 # Get L/S Signals for past 7 days
 async def curr_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="sr")
+        return
     await update.message.reply_text("Generating Trend signals for ALL...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1072,6 +1083,9 @@ async def curr_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def curr_mom_str(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="strength")
+        return
     await update.message.reply_text("Generating Trend signals for ALL...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1097,6 +1111,9 @@ async def curr_mom_str(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def l1_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="strength", sector="l1")
+        return
     await update.message.reply_text("Generating Trend signals for L1...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1115,6 +1132,9 @@ async def l1_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def eth_beta_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="strength", sector="eth_beta")
+        return
     await update.message.reply_text("Generating Trend signals for ETH BETA...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1133,6 +1153,9 @@ async def eth_beta_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def sol_beta_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="strength", sector="sol_beta")
+        return
     await update.message.reply_text("Generating Trend signals for SOL BETA...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1151,6 +1174,9 @@ async def sol_beta_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def meme_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="strength", sector="meme")
+        return
     await update.message.reply_text("Generating Trend signals for memes...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1170,6 +1196,9 @@ async def meme_mom(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Get L/S Signals for past 7 days
 async def curr_mom_top100(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="sr")
+        return
     await update.message.reply_text("Generating Trend signals for top 100 (sorted by SR)...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1192,6 +1221,9 @@ async def curr_mom_top100(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def curr_mom_str_top100(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.signals_command(update, context, sort_by="strength")
+        return
     await update.message.reply_text("Generating Trend signals for top 100 (sorted by Strength)...")
     print('STARTING.....')
     print('GETTING MOMS.....')
@@ -1219,6 +1251,9 @@ async def curr_mom_str_top100(update: Update, context: ContextTypes.DEFAULT_TYPE
 # Get Curr Position Momentum
 async def port_mommy(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends explanation on how to use the bot."""
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.account_momentum_command(update, context)
+        return
     await update.message.reply_text("Generating Position Trend Signals ...")
     print('GETTING MOMS.....')
     _tickers, momo_df = _get_momo_df()
@@ -1238,13 +1273,24 @@ async def chart_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     Handles the /chart command. Generates and sends PnL and Signal charts for a given ticker.
     Usage: /chart BTCUSDT
     """
+    if not xsec_telegram.wants_legacy(context.args):
+        await xsec_telegram.ticker_chart_command(update, context)
+        return
     try:
+        period, days = xsec_telegram.parse_lookback(context.args, default="all")
+        ticker_args = [
+            arg for arg in context.args
+            if str(arg).lower() != "legacy"
+            and xsec_telegram.lookback_token(str(arg)) is None
+        ]
         # Check if the user provided a ticker
-        if not context.args:
-            await update.message.reply_text("Please provide a ticker. Usage: /chart BTCUSDT")
+        if not ticker_args:
+            await update.message.reply_text("Please provide a ticker. Usage: /mc BTC [lookback] legacy")
             return
 
-        ticker = context.args[0].upper()
+        ticker = ticker_args[0].upper()
+        if not ticker.endswith("USDT"):
+            ticker += "USDT"
         await update.message.reply_text(f"Generating charts for {ticker}...")
 
         # --- 1. Load Data ---
@@ -1286,6 +1332,12 @@ async def chart_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         
         # Add price data to the signal DataFrame for plotting
         signal_df['price'] = tickers_price_data[ticker].reindex(signal_df.index, method='ffill')
+        if days is not None:
+            cutoff = signal_df.index.max() - pd.Timedelta(days=days - 1)
+            signal_df = signal_df.loc[signal_df.index >= cutoff]
+            pnl_series = pnl_series.loc[pnl_series.index >= cutoff]
+        if not pnl_series.empty:
+            pnl_series = pnl_series - pnl_series.iloc[0]
         
         # Build a robust path relative to the script's location
         charts_folder = os.path.join(BASE_DIR, "momo_charts")
@@ -1293,7 +1345,13 @@ async def chart_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         
         # Optional: Create the directory if it doesn't exist
         os.makedirs(charts_folder, exist_ok=True)
-        momo.generate_chart_image(pnl_series, signal_df, ticker, output_filename=chart_filename)
+        momo.generate_chart_image(
+            pnl_series,
+            signal_df,
+            ticker,
+            lookback=max(len(signal_df), 1),
+            output_filename=chart_filename,
+        )
         
         # --- 4. Send the Chart Image ---
         await update.message.reply_photo(photo=open(chart_filename, 'rb'))
@@ -1413,10 +1471,15 @@ async def chart_breakout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Usage: /chart_breakout BTCUSDT (or /chart_breakout BTC)
     """
     try:
-        if not context.args:
-            await update.message.reply_text("Please provide a ticker. Usage: /chart_breakout BTCUSDT")
+        period, days = xsec_telegram.parse_lookback(context.args, default="60d")
+        ticker_args = [
+            arg for arg in context.args
+            if xsec_telegram.lookback_token(str(arg)) is None
+        ]
+        if not ticker_args:
+            await update.message.reply_text("Please provide a ticker. Usage: /bc BTC [lookback]")
             return
-        ticker = context.args[0].upper()
+        ticker = ticker_args[0].upper()
         if not ticker.endswith("USDT"):
             ticker = f"{ticker}USDT"
         await update.message.reply_text(f"Generating Breakout charts for {ticker}...")
@@ -1443,13 +1506,17 @@ async def chart_breakout(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pnl_series = pnl_dict[ticker]['pnl_data'][3].fillna(0.0).cumsum()
         signal_df = signal_dict[ticker]
         signal_df['price'] = price_data[ticker].reindex(signal_df.index, method='ffill')
+        if days is not None:
+            cutoff = signal_df.index.max() - pd.Timedelta(days=days - 1)
+            signal_df = signal_df.loc[signal_df.index >= cutoff]
+            pnl_series = pnl_series.loc[pnl_series.index >= cutoff]
         
         # fig = generate_plotly_chart(pnl_series, signal_df, ticker)
         fig = generate_matplotlib_chart(
             pnl_series=pnl_series,
             signal_df=signal_df,
             ticker=ticker,
-            lookback=60
+            lookback=max(len(signal_df), 1),
         )
 
 
@@ -1490,6 +1557,27 @@ def _store_interval(store: MarketDataStore) -> str:
 
 
 async def _start_market_data_streams(application: Application) -> None:
+    try:
+        await application.bot.set_my_commands(
+            [
+                BotCommand("mom_sig_str", "XSec momentum by signal strength"),
+                BotCommand("mom_sig_sr", "Momentum by standalone Sharpe"),
+                BotCommand("mc", "Ticker return, signal and rank charts"),
+                BotCommand("portfolio", "Target weights, notionals and quantities"),
+                BotCommand("rebalance", "Read-only model rebalance sheet"),
+                BotCommand("risk", "Exposure and realized-volatility analytics"),
+                BotCommand("performance", "Portfolio returns vs an asset"),
+                BotCommand("distribution", "Cross-sectional signal percentiles"),
+                BotCommand("changes", "Largest daily signal and target changes"),
+                BotCommand("portfolio_momo", "Assess current Binance positions"),
+                BotCommand("model", "Pinned model parameters and lineage"),
+                BotCommand("health", "Snapshot freshness and universe status"),
+                BotCommand("manual", "Command and lookback guide"),
+            ]
+        )
+    except Exception:
+        logger.exception("Could not publish Telegram command descriptions.")
+
     if settings.market_data_mode != "websocket_closed_candles":
         return
 
@@ -1540,6 +1628,33 @@ async def _stop_market_data_streams(application: Application) -> None:
         logger.info("Stopped Binance closed-candle WebSocket stream tasks.")
 
 
+def _parse_bare_command(text: str | None) -> tuple[str, list[str]] | None:
+    if not text:
+        return None
+    parts = text.strip().split()
+    if not parts or parts[0].startswith("/"):
+        return None
+    return parts[0].lower(), parts[1:]
+
+
+async def _dispatch_bare_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    message = update.effective_message
+    if message is None:
+        return
+    parsed = _parse_bare_command(message.text)
+    if parsed is None:
+        return
+    command, args = parsed
+    handler = context.application.bot_data.get("bare_command_handlers", {}).get(command)
+    if handler is None:
+        return
+    context.args = args
+    await handler(update, context)
+
+
 # ==============================================================================
 # MAIN BOT APPLICATION
 # ==============================================================================
@@ -1585,6 +1700,16 @@ def main():
     # application.add_handler(short_mom_handler)
     application.add_handler(port_mom_handler)
     application.add_handler(chart_handler)
+    application.add_handler(CommandHandler('model', xsec_telegram.model_command))
+    application.add_handler(CommandHandler('portfolio', xsec_telegram.portfolio_command))
+    application.add_handler(CommandHandler('rebalance', xsec_telegram.rebalance_command))
+    application.add_handler(CommandHandler('risk', xsec_telegram.risk_command))
+    application.add_handler(CommandHandler('performance', xsec_telegram.performance_command))
+    application.add_handler(CommandHandler('distribution', xsec_telegram.distribution_command))
+    application.add_handler(CommandHandler('changes', xsec_telegram.changes_command))
+    application.add_handler(CommandHandler('health', xsec_telegram.health_command))
+    application.add_handler(CommandHandler('manual', xsec_telegram.manual_command))
+    application.add_handler(CommandHandler('help', xsec_telegram.manual_command))
 
 
     # --- Breakout Handlers ---
@@ -1606,6 +1731,48 @@ def main():
         application.add_handler(CommandHandler('bc', chart_breakout))
     else:
         print("Breakout commands disabled (missing breakout data or params).")
+
+    bare_command_handlers = {
+        "mom_sig_sr": curr_mom,
+        "mom_sig_str": curr_mom_str,
+        "mom_sr_100": curr_mom_top100,
+        "mom_str_100": curr_mom_str_top100,
+        "mom_l1": l1_mom,
+        "mom_eth_beta": eth_beta_mom,
+        "mom_sol_beta": sol_beta_mom,
+        "mom_meme": meme_mom,
+        "portfolio_momo": port_mommy,
+        "mc": chart_command,
+        "model": xsec_telegram.model_command,
+        "portfolio": xsec_telegram.portfolio_command,
+        "rebalance": xsec_telegram.rebalance_command,
+        "risk": xsec_telegram.risk_command,
+        "performance": xsec_telegram.performance_command,
+        "distribution": xsec_telegram.distribution_command,
+        "changes": xsec_telegram.changes_command,
+        "health": xsec_telegram.health_command,
+        "manual": xsec_telegram.manual_command,
+        "help": xsec_telegram.manual_command,
+    }
+    if breakout_ready:
+        bare_command_handlers.update(
+            {
+                "breakout_sig_sr": breakout_sig_sr,
+                "breakout_sig_str": breakout_sig_str,
+                "breakout_l1": l1_breakout,
+                "breakout_eth_beta": eth_beta_breakout,
+                "breakout_sol_beta": sol_beta_breakout,
+                "breakout_meme": meme_breakout,
+                "breakout_sr_100": breakout_top100,
+                "breakout_str_100": breakout_str_top100,
+                "breakout_pairs": breakout_str_pairs,
+                "portfolio_breakout": port_breakout,
+                "chart_breakout": chart_breakout,
+                "bc": chart_breakout,
+            }
+        )
+    application.bot_data["bare_command_handlers"] = bare_command_handlers
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _dispatch_bare_command))
 
     print("Bot is running with both Momentum and Breakout commands...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)

@@ -19,6 +19,24 @@ Updater = Callable[[pd.DataFrame, str, Path], pd.DataFrame]
 logger = logging.getLogger(__name__)
 
 
+def _read_pickle_compat(path: Path) -> pd.DataFrame:
+    """Read pandas-3 StringDtype pickles from the pandas-2 bot runtime."""
+    try:
+        return pd.read_pickle(path)
+    except TypeError:
+        import pandas.core.arrays.string_ as string_module
+
+        original = string_module.StringDtype
+
+        class CompatibleStringDtype(original):
+            def __init__(self, storage=None, na_value=pd.NA):
+                super().__init__(storage)
+
+        string_module.StringDtype = CompatibleStringDtype
+        pd.StringDtype = CompatibleStringDtype
+        return pd.read_pickle(path)
+
+
 @dataclass(frozen=True)
 class RefreshResult:
     data: pd.DataFrame
@@ -51,7 +69,7 @@ class MarketDataStore:
                 return self._data
             if not self._path.exists():
                 raise FileNotFoundError(str(self._path))
-            self._data = pd.read_pickle(self._path)
+            self._data = _read_pickle_compat(self._path)
             return self._data
 
     def _coverage_starts(

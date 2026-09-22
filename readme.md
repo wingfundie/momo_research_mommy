@@ -31,6 +31,39 @@ You can override paths via env vars in `.env`.
 python3 mom_break_bot.py
 ```
 
+### Corrected XSec20 momentum commands
+
+Momentum commands use the pinned `xsm_ic20_dollar_neutral_vol60` model by default.
+Append `legacy` to use the original per-ticker parameter engine, for example
+`/mom_sig_str legacy` or `/mc SOL legacy`.
+
+- `/mom_sig_str [N]` and `/mom_sig_sr [N]`: relative-strength and standalone-Sharpe rankings.
+- `/portfolio [share|usd]`, `/rebalance`, `/risk [share|usd]`: the read-only $100k model portfolio.
+- `/performance [30d|90d|1y|all] [asset]`: model performance, optionally against any Binance USDT asset.
+- `/distribution [30d|90d|180d|1y|all]`: ticker paths, 25th/75th percentiles, mean signal and breadth.
+- `/model`, `/changes [N]`, `/health`: model lineage, daily changes, and data freshness.
+- `/portfolio_momo`: assess current Binance positions against momentum and XSec signals; it never drives model sizing.
+
+Every registered bot command also accepts slash-free private-chat input. For example,
+`portfolio usd`, `mc SOL`, `performance 1y BTC`, and `mom_sig_str 10` behave exactly like
+their `/portfolio usd`, `/mc SOL`, `/performance 1y BTC`, and `/mom_sig_str 10` forms.
+
+Historical commands accept flexible lookbacks such as `45d`, `12w`, `6m`, `2y`, and `all`.
+Use `manual` or `help` in Telegram, or read [the complete command manual](docs/telegram_bot_manual.md).
+
+All generated charts share the dark composition-card theme used by the Telegram analytics views.
+
+Refresh completed daily candles, opens, funding and the immutable runtime snapshot before the
+bot's reporting window:
+
+```bash
+python scripts/refresh_xsec20_snapshot.py
+```
+
+Run `python scripts/refresh_xsec20_snapshot.py --refresh-universe` on the monthly maintenance
+schedule. A failed required close/open coverage check keeps the last published inputs intact;
+Telegram commands continue to serve that snapshot with a stale-data warning.
+
 ### Shadow crypto momentum research
 
 The causal portfolio research pipeline is isolated from production. It supports time-series and
