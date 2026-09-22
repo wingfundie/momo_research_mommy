@@ -25,6 +25,8 @@ from momo_bot.xsec20 import (
 )
 from momo_bot.xsec_telegram import (
     _performance_args,
+    _portfolio_side_display,
+    _portfolio_side_title,
     lookback_token,
     parse_lookback,
     result_count,
@@ -72,6 +74,37 @@ def test_exchange_quantity_rounding_never_increases_risk() -> None:
     assert round_quantity(-1.239, step_size=0.01, min_qty=0.01) == -1.23
     assert round_quantity(0.005, step_size=0.01, min_qty=0.01) == 0.0
     assert round_quantity(np.nan, step_size=0.01) == 0.0
+
+
+def test_portfolio_output_splits_sides_and_includes_signal_strength() -> None:
+    active = pd.DataFrame(
+        {
+            "symbol": ["BTCUSDT", "SOLUSDT", "PAXGUSDT"],
+            "xsec_side": ["LONG", "LONG", "SHORT"],
+            "xsec_signal": [0.012, 0.018, -0.015],
+            "target_weight": [0.02, 0.04, -0.03],
+            "target_notional": [2_000.0, 4_000.0, -3_000.0],
+            "quantity": [0.02, 30.0, -0.7],
+        }
+    )
+
+    longs = _portfolio_side_display(active, "LONG")
+    shorts = _portfolio_side_display(active, "SHORT")
+
+    assert longs["Coin"].tolist() == ["SOL", "BTC"]
+    assert longs["Signal"].tolist() == ["+1.80%", "+1.20%"]
+    assert shorts.to_dict("records") == [
+        {
+            "Coin": "PAXG",
+            "Signal": "-1.50%",
+            "Weight": "-3.00%",
+            "Notional": "-$3,000",
+            "Qty": "-0.7",
+        }
+    ]
+    assert _portfolio_side_title(active, "LONG") == (
+        "XSec20 LONGS · 2 coins · +6.0% · $6,000"
+    )
 
 
 def test_return_comparison_aligns_periods_and_reports_beta() -> None:
