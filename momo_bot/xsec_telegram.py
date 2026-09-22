@@ -158,12 +158,17 @@ async def _reply_frame(update: Update, frame: pd.DataFrame, title: str | None = 
         )
 
 
-async def _snapshot(update: Update, *, announce: bool = True) -> XSecSnapshot:
+async def _snapshot(
+    update: Update,
+    *,
+    announce: bool = True,
+    warn_stale: bool = True,
+) -> XSecSnapshot:
     if announce:
         await update.message.reply_text("Loading corrected XSec20 snapshot…")
     service = get_xsec20_service()
     snapshot = await asyncio.to_thread(service.get_snapshot)
-    if service.is_stale(snapshot):
+    if warn_stale and service.is_stale(snapshot):
         await update.message.reply_text(
             f"⚠️ STALE SNAPSHOT — data cutoff {snapshot.data_cutoff:%Y-%m-%d}. "
             "Values below are the latest stored model state."
@@ -294,53 +299,63 @@ async def _rounded_portfolio(snapshot: XSecSnapshot) -> pd.DataFrame:
     return latest
 
 
-def _portfolio_side_display(active: pd.DataFrame, side: str) -> pd.DataFrame:
-    """Build one compact Telegram table for a single portfolio side."""
+def _portfolio_side_lines(active: pd.DataFrame, side: str) -> list[str]:
+    """Build compact rows for one side of the one-message portfolio view."""
     side_frame = active.loc[active["xsec_side"].eq(side)].copy()
     side_frame = side_frame.reindex(
         side_frame["target_weight"].abs().sort_values(ascending=False).index
     )
-    return pd.DataFrame(
-        {
-            "Coin": side_frame["symbol"].str.removesuffix("USDT"),
-            "Signal": side_frame["xsec_signal"].map(lambda x: f"{x:+.2%}"),
-            "Weight": side_frame["target_weight"].map(lambda x: f"{x:+.2%}"),
-            "Notional": side_frame["target_notional"].map(
-                lambda x: f"${x:,.0f}" if x >= 0 else f"-${abs(x):,.0f}"
-            ),
-            "Qty": side_frame["quantity"].map(lambda x: f"{x:g}"),
-        }
-    )
-
-
-def _portfolio_side_title(active: pd.DataFrame, side: str) -> str:
-    side_frame = active.loc[active["xsec_side"].eq(side)]
-    weight = float(side_frame["target_weight"].sum())
     notional = float(side_frame["target_notional"].sum())
-    formatted_notional = (
-        f"${notional:,.0f}" if notional >= 0 else f"-${abs(notional):,.0f}"
+    lines = [f"{side}S {len(side_frame)} · {notional / 1_000:+.2f}k", "Coin   Str     SR     $k Qty"]
+    for row in side_frame.itertuples(index=False):
+        coin = str(row.symbol).removesuffix("USDT")
+        strength = "n/a" if not np.isfinite(row.absolute_forecast) else f"{row.absolute_forecast:+.2f}"
+        sharpe = "n/a" if not np.isfinite(row.standalone_sr) else f"{row.standalone_sr:+.2f}"
+        allocation = f"{row.target_notional / 1_000:+.2f}"
+        quantity = "n/a" if not np.isfinite(row.quantity) else f"{row.quantity:.6g}"
+        lines.append(f"{coin:<6} {strength:>6} {sharpe:>6} {allocation:>6} {quantity}")
+    return lines
+
+
+def _portfolio_message(
+    active: pd.DataFrame,
+    state: pd.Series,
+    *,
+    stale: bool = False,
+) -> str:
+    body = "\n".join(
+        _portfolio_side_lines(active, "LONG")
+        + [""]
+        + _portfolio_side_lines(active, "SHORT")
     )
-    return (
-        f"XSec20 {side}S · {len(side_frame)} coins · "
-        f"{weight:+.1%} · {formatted_notional}"
+    stale_line = "⚠️ Latest stored snapshot · " if stale else ""
+    message = (
+        "<b>XSec20 · $100k target portfolio</b>\n"
+        f"{stale_line}Held L {state.long_exposure:.1%} · S {state.short_exposure:.1%} · "
+        f"G {state.gross_exposure:.1%} · N {state.net_exposure:+.1%}\n"
+        "Str: ticker strength −20…+20 · SR: standalone Sharpe · $k: notional/weight %\n"
+        f"<pre>{html.escape(body)}</pre>"
     )
+    if len(message) > 4096:
+        raise ValueError(f"Portfolio message is too long for Telegram: {len(message)} characters")
+    return message
 
 
 async def portfolio_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    snapshot = await _snapshot(update)
+    snapshot = await _snapshot(update, announce=False, warn_stale=False)
     unit = "usd" if any(str(x).lower() == "usd" for x in context.args) else "share"
     latest = await _rounded_portfolio(snapshot)
     active = latest[latest["target_weight"].abs().gt(1e-8)].copy()
     active = active.reindex(active["target_weight"].abs().sort_values(ascending=False).index)
     state = snapshot.portfolio.iloc[-1]
     await update.message.reply_text(
-        f"Held exposure — Long {state.long_exposure:.1%} · Short {state.short_exposure:.1%} · "
-        f"Gross {state.gross_exposure:.1%} · Net {state.net_exposure:+.1%} · "
-        f"$100k sizing base\nSignal = signed raw cross-sectional strength."
+        _portfolio_message(
+            active,
+            state,
+            stale=get_xsec20_service().is_stale(snapshot),
+        ),
+        parse_mode=ParseMode.HTML,
     )
-    for side in ("LONG", "SHORT"):
-        display = _portfolio_side_display(active, side)
-        await _reply_frame(update, display, _portfolio_side_title(active, side))
     figures = [portfolio_figure(latest, unit=unit)]
     period, days = parse_lookback(context.args, default=None)
     if period is not None:
