@@ -64,6 +64,31 @@ Run `python scripts/refresh_xsec20_snapshot.py --refresh-universe` on the monthl
 schedule. A failed required close/open coverage check keeps the last published inputs intact;
 Telegram commands continue to serve that snapshot with a stale-data warning.
 
+Publish the validated production snapshot and the lightweight research dashboard inputs to the
+cross-asset dashboard after a successful refresh:
+
+```bash
+python scripts/publish_dashboard_snapshot.py \
+  --publish \
+  --base-url https://acausal-cross-asset-dashboard.onrender.com \
+  --env-file "../upd_dash_board/.env"
+```
+
+The publisher uploads an immutable version under `systematic/crypto/momentum/versions/` and asks
+the dashboard to activate it only after all hashes and table contracts pass. A failed upload or
+activation leaves the previous dashboard version active.
+
+For the daily scheduled job, refresh and publish in one fail-fast command:
+
+```bash
+python scripts/refresh_and_publish_dashboard.py \
+  --base-url https://acausal-cross-asset-dashboard.onrender.com \
+  --env-file "../upd_dash_board/.env"
+```
+
+Use `--refresh-universe` on the monthly run. The publish step does not run when market-data
+refresh or runtime validation fails, and the dashboard keeps serving its last active version.
+
 ### Shadow crypto momentum research
 
 The causal portfolio research pipeline is isolated from production. It supports time-series and
