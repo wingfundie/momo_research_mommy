@@ -71,7 +71,7 @@ cross-asset dashboard after a successful refresh:
 python scripts/publish_dashboard_snapshot.py \
   --publish \
   --base-url https://acausal-cross-asset-dashboard.onrender.com \
-  --env-file "../upd_dash_board/.env"
+  --env-file "../../upd_dash_board/.env"
 ```
 
 The publisher uploads an immutable version under `systematic/crypto/momentum/versions/` and asks
@@ -83,7 +83,7 @@ For the daily scheduled job, refresh and publish in one fail-fast command:
 ```bash
 python scripts/refresh_and_publish_dashboard.py \
   --base-url https://acausal-cross-asset-dashboard.onrender.com \
-  --env-file "../upd_dash_board/.env"
+  --env-file "../../upd_dash_board/.env"
 ```
 
 Use `--refresh-universe` on the monthly run. The publish step does not run when market-data
