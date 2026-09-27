@@ -55,6 +55,19 @@ RESEARCH_INPUT_FILES = (
     "coingecko_asset_metadata.json",
 )
 CHUNK_SIZE = 8 * 1024 * 1024
+RISK_GRID_COLUMNS = (
+    "family",
+    "model",
+    "target_vol",
+    "gross_cap",
+    "ticker_risk_cap",
+    "rebalance",
+    "taker_share",
+    "slippage_bps",
+    "validation_net_sharpe",
+    "holdout_2026_net_sharpe",
+    "validation_max_drawdown",
+)
 
 
 def _sha256(path: Path) -> str:
@@ -96,6 +109,71 @@ def _validate_runtime(runtime: Path) -> dict[str, object]:
     return manifest
 
 
+def _build_research_extracts(source: Path, destination: Path) -> list[str]:
+    written: list[str] = []
+    configurations_path = source / "tested_configurations.parquet"
+    if configurations_path.is_file():
+        configurations = pd.read_parquet(configurations_path, columns=list(RISK_GRID_COLUMNS))
+        eligible = configurations.loc[
+            configurations["taker_share"].fillna(1).eq(1)
+            & configurations["slippage_bps"].fillna(5).eq(5)
+        ]
+        headline = eligible.sort_values("validation_net_sharpe", ascending=False).head(250)
+        headline_path = destination / "headline_risk_grid.parquet"
+        headline_path.parent.mkdir(parents=True, exist_ok=True)
+        headline.to_parquet(headline_path, index=False)
+        summary_path = destination / "research_summary.json"
+        summary_path.write_text(
+            json.dumps({"tested_configurations": len(configurations)}, indent=2),
+            encoding="utf-8",
+        )
+        written.extend([headline_path.name, summary_path.name])
+
+    actual_path = source / "actual_funding_reconciliation.parquet"
+    if actual_path.is_file():
+        actual = pd.read_parquet(
+            actual_path,
+            columns=["timestamp", "symbol", "income_usd", "match_status"],
+        ).sort_values("timestamp", ascending=False).head(100)
+        output = destination / "actual_funding_reconciliation_head.parquet"
+        actual.to_parquet(output, index=False)
+        written.append(output.name)
+
+    expected_path = source / "expected_funding_snapshot.csv"
+    if expected_path.is_file():
+        expected = pd.read_csv(
+            expected_path,
+            usecols=[
+                "model",
+                "symbol",
+                "position_weight",
+                "reference_funding_rate",
+                "next_settlement_expected_return",
+                "next_24h_expected_return",
+            ],
+            nrows=100,
+        )
+        output = destination / "expected_funding_snapshot_head.csv"
+        expected.to_csv(output, index=False)
+        written.append(output.name)
+
+    modeled_path = source / "modeled_funding_summary.csv"
+    if modeled_path.is_file():
+        modeled = pd.read_csv(
+            modeled_path,
+            usecols=["period", "model", "paid", "received", "net"],
+        )
+        modeled_all = (
+            modeled.loc[modeled["period"].eq("ALL")]
+            .groupby("model", as_index=False)[["paid", "received", "net"]]
+            .sum()
+        )
+        output = destination / "modeled_funding_all.csv"
+        modeled_all.to_csv(output, index=False)
+        written.append(output.name)
+    return written
+
+
 def build_bundle(*, root: Path = ROOT, output_root: Path | None = None, version: str | None = None) -> Path:
     runtime = root / "data_store/xsec20_runtime"
     runtime_manifest = _validate_runtime(runtime)
@@ -116,6 +194,9 @@ def build_bundle(*, root: Path = ROOT, output_root: Path | None = None, version:
         if source.is_file():
             _copy(source, destination / "research/complete" / name)
             copied_research.append(name)
+    copied_research.extend(
+        _build_research_extracts(research, destination / "research/complete")
+    )
 
     inputs = root / "data_store/crypto_momentum_research/inputs"
     copied_inputs: list[str] = []
